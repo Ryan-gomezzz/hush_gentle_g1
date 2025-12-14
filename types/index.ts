@@ -20,6 +20,8 @@ export type Product = {
         usage?: string;
     };
     category_id?: string;
+    is_featured?: boolean;
+    is_archived?: boolean;
 };
 
 export type Category = {

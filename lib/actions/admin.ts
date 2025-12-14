@@ -177,12 +177,50 @@ export async function getRecentOrders(limit: number = 5) {
 export async function getAllOrders() {
     await requireAdmin()
     const supabase = createClient()
-    const { data: orders } = await supabase
+    
+    // First, get orders with user info
+    const { data: orders, error: ordersError } = await supabase
         .from('orders')
-        .select('*, user:profiles(full_name, email), items:order_items(*, product:products(name))')
+        .select('*, user:profiles(full_name, email)')
         .order('created_at', { ascending: false })
 
-    return orders || []
+    if (ordersError) {
+        console.error('Error fetching orders:', ordersError)
+        return []
+    }
+
+    if (!orders || orders.length === 0) {
+        return []
+    }
+
+    // Then, get order items for each order
+    const orderIds = orders.map(o => o.id)
+    const { data: orderItems, error: itemsError } = await supabase
+        .from('order_items')
+        .select('*, product:products(name)')
+        .in('order_id', orderIds)
+
+    if (itemsError) {
+        console.error('Error fetching order items:', itemsError)
+        // Return orders without items if items query fails
+        return orders.map((order: any) => ({ ...order, items: [] }))
+    }
+
+    // Group items by order_id
+    const itemsByOrderId = new Map<string, any[]>()
+    orderItems?.forEach((item: any) => {
+        const orderId = item.order_id
+        if (!itemsByOrderId.has(orderId)) {
+            itemsByOrderId.set(orderId, [])
+        }
+        itemsByOrderId.get(orderId)!.push(item)
+    })
+
+    // Attach items to orders
+    return orders.map((order: any) => ({
+        ...order,
+        items: itemsByOrderId.get(order.id) || [],
+    }))
 }
 
 export async function getOrderById(id: string) {

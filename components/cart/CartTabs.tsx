@@ -100,12 +100,13 @@ export default function CartTabs({ cartItems, subtotal, orders, isLoggedIn }: Ca
                             <div className="flex-1 space-y-6">
                                 {cartItems.map((item: any) => (
                                     <div key={item.id} className="flex gap-4 p-4 bg-white rounded-2xl border border-sage-100 items-center">
-                                        <div className="relative w-20 h-20 bg-beige-100 rounded-lg overflow-hidden flex-shrink-0">
+                                        <div className="relative w-20 h-20 bg-beige-50 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center p-2">
                                             <Image
                                                 src={item.product.images?.[0] || '/placeholder.jpg'}
                                                 alt={item.product.name}
                                                 fill
-                                                className="object-cover"
+                                                className="object-contain p-1"
+                                                sizes="80px"
                                             />
                                         </div>
                                         <div className="flex-1">
@@ -214,13 +215,14 @@ export default function CartTabs({ cartItems, subtotal, orders, isLoggedIn }: Ca
                                             <div className="space-y-3">
                                                 {order.items?.map((item: any) => (
                                                     <div key={item.id} className="flex items-center gap-4">
-                                                        <div className="relative w-16 h-16 bg-beige-100 rounded-lg overflow-hidden flex-shrink-0">
+                                                        <div className="relative w-16 h-16 bg-beige-50 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center p-2">
                                                             {item.product?.images?.[0] ? (
                                                                 <Image
                                                                     src={item.product.images[0]}
                                                                     alt={item.product?.name || 'Product'}
                                                                     fill
-                                                                    className="object-cover"
+                                                                    className="object-contain p-1"
+                                                                    sizes="64px"
                                                                 />
                                                             ) : (
                                                                 <div className="w-full h-full flex items-center justify-center">

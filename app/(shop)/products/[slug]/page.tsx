@@ -30,12 +30,14 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
 
                 {/* Gallery */}
-                <div className="relative aspect-square w-full bg-white rounded-3xl overflow-hidden shadow-sm">
+                <div className="relative aspect-square w-full bg-beige-50 rounded-3xl overflow-hidden shadow-sm flex items-center justify-center p-8">
                     <Image
                         src={imageUrl}
                         alt={product.name}
                         fill
-                        className="object-cover"
+                        className="object-contain p-4"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        priority
                     />
                 </div>
 

@@ -12,15 +12,16 @@ export default function ProductCard({ product }: { product: Product }) {
     return (
         <Card className="overflow-hidden border-none shadow-none hover:shadow-lg transition-all duration-300 group bg-transparent">
             <Link href={`/products/${product.slug}`}>
-                <div className="relative aspect-square w-full bg-white rounded-2xl overflow-hidden mb-4">
+                <div className="relative aspect-square w-full bg-beige-50 rounded-2xl overflow-hidden mb-4 flex items-center justify-center p-4">
                     <Image
                         src={imageUrl}
                         alt={product.name}
                         fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="object-contain group-hover:scale-105 transition-transform duration-500 p-4"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
                     {product.stock <= 0 && (
-                        <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-10">
                             <span className="px-3 py-1 bg-gray-900 text-white text-xs font-bold uppercase tracking-wider">Out of Stock</span>
                         </div>
                     )}

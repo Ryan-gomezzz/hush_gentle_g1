@@ -38,63 +38,79 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 }
 
 async function sendViaResend(options: EmailOptions, config: any): Promise<boolean> {
-    const Resend = require('resend')
-    const resend = new Resend(process.env.RESEND_API_KEY)
+    try {
+        // Dynamic import to avoid build-time dependency
+        const { Resend } = await import('resend')
+        const resend = new Resend(process.env.RESEND_API_KEY)
 
-    const { error } = await resend.emails.send({
-        from: `${config.fromName || 'Hush Gentle'} <${config.fromEmail}>`,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
-    })
+        const { error } = await resend.emails.send({
+            from: `${config.fromName || 'Hush Gentle'} <${config.fromEmail}>`,
+            to: options.to,
+            subject: options.subject,
+            html: options.html,
+            text: options.text,
+        })
 
-    if (error) {
-        console.error('Resend error:', error)
+        if (error) {
+            console.error('Resend error:', error)
+            return false
+        }
+
+        return true
+    } catch (error: any) {
+        if (error.code === 'MODULE_NOT_FOUND') {
+            console.error('Resend package not installed. Run: npm install resend')
+        } else {
+            console.error('Resend error:', error)
+        }
         return false
     }
-
-    return true
 }
 
 async function sendViaSendGrid(options: EmailOptions, config: any): Promise<boolean> {
-    const sgMail = require('@sendgrid/mail')
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY)
-
-    const msg = {
-        to: options.to,
-        from: {
-            email: config.fromEmail,
-            name: config.fromName || 'Hush Gentle',
-        },
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
-    }
-
     try {
-        await sgMail.send(msg)
+        // Dynamic import to avoid build-time dependency
+        const sgMail = await import('@sendgrid/mail')
+        sgMail.default.setApiKey(process.env.SENDGRID_API_KEY!)
+
+        const msg = {
+            to: options.to,
+            from: {
+                email: config.fromEmail,
+                name: config.fromName || 'Hush Gentle',
+            },
+            subject: options.subject,
+            html: options.html,
+            text: options.text,
+        }
+
+        await sgMail.default.send(msg)
         return true
     } catch (error: any) {
-        console.error('SendGrid error:', error.response?.body || error)
+        if (error.code === 'MODULE_NOT_FOUND') {
+            console.error('SendGrid package not installed. Run: npm install @sendgrid/mail')
+        } else {
+            console.error('SendGrid error:', error.response?.body || error)
+        }
         return false
     }
 }
 
 async function sendViaSMTP(options: EmailOptions, config: any): Promise<boolean> {
-    const nodemailer = require('nodemailer')
-
-    const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: process.env.SMTP_PORT === '465',
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASSWORD,
-        },
-    })
-
     try {
+        // Dynamic import to avoid build-time dependency
+        const nodemailer = await import('nodemailer')
+
+        const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: parseInt(process.env.SMTP_PORT || '587'),
+            secure: process.env.SMTP_PORT === '465',
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASSWORD,
+            },
+        })
+
         await transporter.sendMail({
             from: `"${config.fromName || 'Hush Gentle'}" <${config.fromEmail}>`,
             to: options.to,
@@ -103,8 +119,12 @@ async function sendViaSMTP(options: EmailOptions, config: any): Promise<boolean>
             text: options.text,
         })
         return true
-    } catch (error) {
-        console.error('SMTP error:', error)
+    } catch (error: any) {
+        if (error.code === 'MODULE_NOT_FOUND') {
+            console.error('Nodemailer package not installed. Run: npm install nodemailer')
+        } else {
+            console.error('SMTP error:', error)
+        }
         return false
     }
 }

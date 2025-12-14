@@ -16,6 +16,7 @@ export async function sendOrderConfirmation(orderId: string) {
         .from('orders')
         .select(`
             id,
+            created_at,
             shipping_details,
             total_amount,
             items:order_items(
@@ -95,6 +96,7 @@ export async function sendOrderAlert(orderId: string) {
         .from('orders')
         .select(`
             id,
+            created_at,
             shipping_details,
             total_amount,
             items:order_items(quantity)

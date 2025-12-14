@@ -3,7 +3,7 @@
  * Set environment variables for your chosen provider
  */
 
-export type EmailProvider = 'smtp' | 'resend' | 'sendgrid'
+export type EmailProvider = 'resend'
 
 export interface EmailConfig {
     provider: EmailProvider
@@ -21,24 +21,6 @@ export function getEmailConfig(): EmailConfig {
         }
     }
 
-    // Check for SendGrid
-    if (process.env.SENDGRID_API_KEY) {
-        return {
-            provider: 'sendgrid',
-            fromEmail: process.env.SENDGRID_FROM_EMAIL || 'noreply@hushgentle.com',
-            fromName: 'Hush Gentle',
-        }
-    }
-
-    // Check for SMTP
-    if (process.env.SMTP_HOST) {
-        return {
-            provider: 'smtp',
-            fromEmail: process.env.SMTP_FROM_EMAIL || 'noreply@hushgentle.com',
-            fromName: 'Hush Gentle',
-        }
-    }
-
     // Default to Resend format (but will fail if no API key)
     return {
         provider: 'resend',
@@ -48,10 +30,6 @@ export function getEmailConfig(): EmailConfig {
 }
 
 export function isEmailConfigured(): boolean {
-    return !!(
-        process.env.RESEND_API_KEY ||
-        process.env.SENDGRID_API_KEY ||
-        process.env.SMTP_HOST
-    )
+    return !!process.env.RESEND_API_KEY
 }
 

@@ -46,6 +46,10 @@ export async function addToWishlist(productId: string) {
         wishlist = newWishlist
     }
 
+    if (!wishlist?.id) {
+        throw new Error('Failed to load wishlist')
+    }
+
     // Check if item already exists
     const { data: existing } = await supabase
         .from('wishlist_items')

@@ -178,10 +178,10 @@ export async function getAllOrders() {
     await requireAdmin()
     const supabase = createClient()
     
-    // First, get orders with user info
+    // First, get orders without joins to avoid RLS issues
     const { data: orders, error: ordersError } = await supabase
         .from('orders')
-        .select('*, user:profiles(full_name, email)')
+        .select('*')
         .order('created_at', { ascending: false })
 
     if (ordersError) {
@@ -190,37 +190,75 @@ export async function getAllOrders() {
     }
 
     if (!orders || orders.length === 0) {
+        console.log('No orders found in database')
         return []
     }
 
-    // Then, get order items for each order
+    console.log(`Found ${orders.length} orders`)
+
+    // Get user profiles for orders that have user_id
+    const userIds = orders.map(o => o.user_id).filter(Boolean) as string[]
+    let profilesMap = new Map<string, any>()
+    
+    if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', userIds)
+
+        if (!profilesError && profiles) {
+            profiles.forEach((profile: any) => {
+                profilesMap.set(profile.id, profile)
+            })
+        }
+    }
+
+    // Get order items for each order
     const orderIds = orders.map(o => o.id)
     const { data: orderItems, error: itemsError } = await supabase
         .from('order_items')
-        .select('*, product:products(name)')
+        .select('*')
         .in('order_id', orderIds)
 
-    if (itemsError) {
-        console.error('Error fetching order items:', itemsError)
-        // Return orders without items if items query fails
-        return orders.map((order: any) => ({ ...order, items: [] }))
+    // Get product names for order items
+    const productIds = orderItems?.map((item: any) => item.product_id).filter(Boolean) || []
+    let productsMap = new Map<string, any>()
+    
+    if (productIds.length > 0) {
+        const { data: products, error: productsError } = await supabase
+            .from('products')
+            .select('id, name')
+            .in('id', productIds)
+
+        if (!productsError && products) {
+            products.forEach((product: any) => {
+                productsMap.set(product.id, product)
+            })
+        }
     }
 
-    // Group items by order_id
+    // Group items by order_id and attach product info
     const itemsByOrderId = new Map<string, any[]>()
     orderItems?.forEach((item: any) => {
         const orderId = item.order_id
         if (!itemsByOrderId.has(orderId)) {
             itemsByOrderId.set(orderId, [])
         }
-        itemsByOrderId.get(orderId)!.push(item)
+        itemsByOrderId.get(orderId)!.push({
+            ...item,
+            product: productsMap.get(item.product_id) || { name: 'Unknown Product' },
+        })
     })
 
-    // Attach items to orders
-    return orders.map((order: any) => ({
-        ...order,
-        items: itemsByOrderId.get(order.id) || [],
-    }))
+    // Attach items and user info to orders
+    return orders.map((order: any) => {
+        const user = order.user_id ? profilesMap.get(order.user_id) : null
+        return {
+            ...order,
+            user: user || null,
+            items: itemsByOrderId.get(order.id) || [],
+        }
+    })
 }
 
 export async function getOrderById(id: string) {

@@ -171,3 +171,46 @@ export async function createOrder(formData: FormData) {
     // 7. Redirect to success
     redirect(`/checkout/success?orderId=${order.id}`)
 }
+
+/**
+ * Get orders for the current logged-in user
+ * Returns empty array if user is not logged in
+ */
+export async function getUserOrders() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return []
+    }
+
+    const { data: orders, error } = await supabase
+        .from('orders')
+        .select(`
+            id,
+            status,
+            total_amount,
+            created_at,
+            shipping_details,
+            items:order_items(
+                id,
+                quantity,
+                price_at_purchase,
+                product:products(
+                    id,
+                    name,
+                    slug,
+                    images
+                )
+            )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('Error fetching user orders:', error)
+        return []
+    }
+
+    return orders || []
+}

@@ -115,15 +115,16 @@ export async function getDashboardKPIs() {
     const prevAbandonmentRate = prevTotalCarts > 0 ? (prevAbandonedCount / prevTotalCarts) * 100 : 0
     const abandonmentChange = prevAbandonmentRate > 0 ? abandonmentRate - prevAbandonmentRate : 0
 
+    // Ensure all values are numbers and handle edge cases
     return {
-        totalRevenue: Math.round(totalRevenue * 100) / 100,
-        revenueChange: Math.round(revenueChange * 100) / 100,
-        orderCount,
-        orderChange: Math.round(orderChange * 100) / 100,
-        conversionRate: Math.round(conversionRate * 10) / 10,
-        conversionChange: Math.round(conversionChange * 10) / 10,
-        abandonmentRate: Math.round(abandonmentRate * 10) / 10,
-        abandonmentChange: Math.round(abandonmentChange * 10) / 10,
+        totalRevenue: Math.round((totalRevenue || 0) * 100) / 100,
+        revenueChange: Math.round((revenueChange || 0) * 100) / 100,
+        orderCount: orderCount || 0,
+        orderChange: Math.round((orderChange || 0) * 100) / 100,
+        conversionRate: Math.round((conversionRate || 0) * 10) / 10,
+        conversionChange: Math.round((conversionChange || 0) * 10) / 10,
+        abandonmentRate: Math.round((abandonmentRate || 0) * 10) / 10,
+        abandonmentChange: Math.round((abandonmentChange || 0) * 10) / 10,
     }
 }
 

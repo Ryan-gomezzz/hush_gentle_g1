@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Star, MessageCircle, Settings } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Star, MessageCircle, Settings, BarChart } from 'lucide-react'
 
 export default function AdminLayout({
     children,
@@ -15,6 +15,7 @@ export default function AdminLayout({
         { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/dashboard/products', label: 'Products', icon: Package },
         { href: '/dashboard/orders', label: 'Orders', icon: ShoppingCart },
+        { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart },
         { href: '/dashboard/reviews', label: 'Reviews', icon: Star },
         { href: '/dashboard/chatbot', label: 'Chatbot', icon: MessageCircle },
         { href: '/dashboard/settings', label: 'Settings', icon: Settings },

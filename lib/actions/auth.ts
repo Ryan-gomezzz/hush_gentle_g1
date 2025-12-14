@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import { AuthState } from '@/lib/auth'
 
-export async function login(prevState: AuthState, formData: FormData): Promise<AuthState> {
+export async function login(prevState: AuthState, formData: FormData, redirectTo: string = '/'): Promise<AuthState> {
     const supabase = createClient()
     const email = formData.get('email') as string
     const password = formData.get('password') as string
@@ -24,10 +24,13 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
     await mergeCartsOnLogin()
 
     revalidatePath('/', 'layout')
-    redirect('/')
+    
+    // Redirect to the specified URL or home
+    const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/'
+    redirect(safeRedirect)
 }
 
-export async function signup(prevState: AuthState, formData: FormData): Promise<AuthState> {
+export async function signup(prevState: AuthState, formData: FormData, redirectTo: string = '/'): Promise<AuthState> {
     const supabase = createClient()
     const email = formData.get('email') as string
     const password = formData.get('password') as string
@@ -81,8 +84,8 @@ export async function signup(prevState: AuthState, formData: FormData): Promise<
 
     revalidatePath('/', 'layout')
     
-    // Return success state - client will handle redirect
-    return { message: 'SUCCESS_REDIRECT' }
+    // Return success state with redirect URL - client will handle redirect
+    return { message: `SUCCESS_REDIRECT:${redirectTo}` }
 }
 
 export async function signout() {

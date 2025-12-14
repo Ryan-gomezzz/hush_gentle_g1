@@ -11,7 +11,7 @@ export default async function CheckoutPage() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-        redirect('/login')
+        redirect('/login?redirect=/checkout')
     }
     await trackPageViewServer(user?.id, '/checkout', { event_name: 'checkout_started' })
 

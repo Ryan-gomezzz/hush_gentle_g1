@@ -1,11 +1,20 @@
 'use client'
 
 import { useEffect } from 'react'
-import { trackPageView } from '@/lib/analytics'
 
 export default function CheckoutTracker() {
     useEffect(() => {
-        trackPageView('/checkout', { event_name: 'checkout_started' })
+        // Client-side checkout tracking via API route
+        fetch('/api/analytics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                event_name: 'checkout_started',
+                path: '/checkout',
+            }),
+        }).catch(() => {
+            // Silently fail - analytics should not break the app
+        })
     }, [])
 
     return null

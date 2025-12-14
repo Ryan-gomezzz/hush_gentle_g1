@@ -217,6 +217,12 @@ export async function updateOrderStatus(orderId: string, status: string) {
         throw new Error('Failed to update order status')
     }
 
+    // Revalidate paths to refresh dashboard KPIs and orders list
+    const { revalidatePath } = await import('next/cache')
+    revalidatePath('/dashboard')
+    revalidatePath('/dashboard/orders')
+    revalidatePath('/dashboard/analytics')
+
     return data
 }
 

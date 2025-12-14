@@ -1,7 +1,7 @@
 import { getAllOrders, getOrderStats } from '@/lib/actions/admin'
-import { Eye, Truck, Check, X } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import Link from 'next/link'
-import { updateOrderStatus } from '@/lib/actions/admin'
+import OrderStatusDropdown from '@/components/admin/OrderStatusDropdown'
 
 function formatOrderId(orderId: string, createdAt: string): string {
     const date = new Date(createdAt)
@@ -63,7 +63,14 @@ export default async function AdminOrdersPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {orders.map((order: any) => {
+                        {orders.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                                    No orders found
+                                </td>
+                            </tr>
+                        ) : (
+                            orders.map((order: any) => {
                             const orderNumber = formatOrderId(order.id, order.created_at)
                             const shippingDetails = order.shipping_details as any
                             const customerName = shippingDetails?.fullName || order.user?.full_name || 'Guest'
@@ -77,51 +84,39 @@ export default async function AdminOrdersPage() {
                                         <div className="text-gray-900">{customerName}</div>
                                         <div className="text-xs text-gray-500">{customerEmail}</div>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-700">{itemCount}</td>
-                                    <td className="px-6 py-4 font-bold text-gray-900">₹{Number(order.total_amount).toFixed(2)}</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded-full text-xs ${statusColors[order.status] || 'bg-gray-100 text-gray-800'}`}>
-                                            {order.status}
-                                        </span>
-                                    </td>
                                     <td className="px-6 py-4 text-gray-700">
-                                        {new Date(order.created_at).toISOString().slice(0, 10)}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <Link href={`/dashboard/orders/${order.id}`} className="text-gray-400 hover:text-sage-600">
-                                                <Eye className="w-4 h-4" />
-                                            </Link>
-                                            {(order.status === 'confirmed' || order.status === 'shipped') && (
-                                                <Link href={`/dashboard/orders/${order.id}`} className="text-gray-400 hover:text-sage-600">
-                                                    <Truck className="w-4 h-4" />
-                                                </Link>
-                                            )}
-                                            {order.status === 'pending' && (
-                                                <>
-                                                    <form action={async () => {
-                                                        'use server'
-                                                        await updateOrderStatus(order.id, 'confirmed')
-                                                    }}>
-                                                        <button type="submit" className="text-gray-400 hover:text-green-600">
-                                                            <Check className="w-4 h-4" />
-                                                        </button>
-                                                    </form>
-                                                    <form action={async () => {
-                                                        'use server'
-                                                        await updateOrderStatus(order.id, 'cancelled')
-                                                    }}>
-                                                        <button type="submit" className="text-gray-400 hover:text-red-600">
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    </form>
-                                                </>
+                                        <div className="space-y-1">
+                                            {order.items && order.items.length > 0 ? (
+                                                order.items.map((item: any, idx: number) => (
+                                                    <div key={idx} className="text-sm">
+                                                        {item.product?.name || 'Unknown Product'} (Qty: {item.quantity})
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <span className="text-gray-400">No items</span>
                                             )}
                                         </div>
                                     </td>
+                                    <td className="px-6 py-4 font-bold text-gray-900">₹{Number(order.total_amount).toFixed(2)}</td>
+                                    <td className="px-6 py-4">
+                                        <OrderStatusDropdown orderId={order.id} currentStatus={order.status} />
+                                    </td>
+                                    <td className="px-6 py-4 text-gray-700">
+                                        {new Date(order.created_at).toLocaleDateString('en-US', { 
+                                            year: 'numeric', 
+                                            month: 'short', 
+                                            day: 'numeric' 
+                                        })}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <Link href={`/dashboard/orders/${order.id}`} className="text-gray-400 hover:text-sage-600">
+                                            <Eye className="w-4 h-4" />
+                                        </Link>
+                                    </td>
                                 </tr>
                             )
-                        })}
+                        })
+                        )}
                     </tbody>
                 </table>
             </div>

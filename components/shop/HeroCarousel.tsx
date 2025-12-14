@@ -104,21 +104,19 @@ export default function HeroCarousel() {
                 </motion.div>
             </div>
 
-            {/* Hero Content Overlay - Button Only */}
-            <div className="absolute inset-0 z-20 flex flex-col justify-center items-center text-center px-4 pointer-events-none">
+            {/* Shop Collection Button - Just Above Navigation Dots */}
+            <div className="absolute bottom-20 left-0 right-0 z-20 flex justify-center items-center text-center px-4 pointer-events-none">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 1.5, duration: 1 }}
-                    className="flex flex-col items-center"
+                    className="pointer-events-auto"
                 >
-                    <div className="flex gap-4 pointer-events-auto">
-                        <Link href="/products">
-                            <button className="px-10 py-4 bg-white/90 text-sage-900 rounded-full text-lg hover:bg-white transition-all shadow-lg cursor-pointer">
-                                Shop Collection
-                            </button>
-                        </Link>
-                    </div>
+                    <Link href="/products">
+                        <button className="px-10 py-4 bg-white/90 text-sage-900 rounded-full text-lg hover:bg-white transition-all shadow-lg cursor-pointer">
+                            Shop Collection
+                        </button>
+                    </Link>
                 </motion.div>
             </div>
 

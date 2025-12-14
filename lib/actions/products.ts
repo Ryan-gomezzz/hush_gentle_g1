@@ -13,17 +13,19 @@ export async function getProducts(categorySlug?: string): Promise<Product[]> {
         .order('created_at', { ascending: false })
 
     if (categorySlug) {
-        // We need to join with categories to filter by slug
-        // However, Supabase complex filtering on joined tables usually requires inner joins or valid foreign keys.
-        // simpler approach: fetch category ID first or use !inner if allowed.
-        // For now, let's just fetching all and filtering client side if volume is small, or use correct join syntax.
-        // Correct Supabase syntax for filtering on foreign table:
-        query = supabase
-            .from('products')
-            .select('*, category:categories!inner(slug, name)')
-            .eq('is_archived', false)
-            .eq('category.slug', categorySlug)
-            .order('created_at', { ascending: false })
+        // First get the category ID by slug
+        const { data: category } = await supabase
+            .from('categories')
+            .select('id')
+            .eq('slug', categorySlug)
+            .single()
+
+        if (category) {
+            query = query.eq('category_id', category.id)
+        } else {
+            // Category not found, return empty array
+            return []
+        }
     }
 
     const { data, error } = await query

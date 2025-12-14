@@ -40,6 +40,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 async function sendViaResend(options: EmailOptions, config: any): Promise<boolean> {
     try {
         // Dynamic import to avoid build-time dependency
+        // @ts-ignore - Optional dependency, may not be installed
         const { Resend } = await import('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -70,6 +71,7 @@ async function sendViaResend(options: EmailOptions, config: any): Promise<boolea
 async function sendViaSendGrid(options: EmailOptions, config: any): Promise<boolean> {
     try {
         // Dynamic import to avoid build-time dependency
+        // @ts-ignore - Optional dependency, may not be installed
         const sgMail = await import('@sendgrid/mail')
         sgMail.default.setApiKey(process.env.SENDGRID_API_KEY!)
 
@@ -99,6 +101,7 @@ async function sendViaSendGrid(options: EmailOptions, config: any): Promise<bool
 async function sendViaSMTP(options: EmailOptions, config: any): Promise<boolean> {
     try {
         // Dynamic import to avoid build-time dependency
+        // @ts-ignore - Optional dependency, may not be installed
         const nodemailer = await import('nodemailer')
 
         const transporter = nodemailer.createTransport({

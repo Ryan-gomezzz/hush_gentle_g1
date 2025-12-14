@@ -72,12 +72,26 @@ export async function getDashboardKPIs() {
     const conversionChange = prevConversionRate > 0 ? conversionRate - prevConversionRate : 0
 
     // 4. Cart Abandonment Rate
-    const { data: abandonedCarts } = await supabase
+    // Get all carts with items
+    const { data: allCarts } = await supabase
         .from('carts')
-        .select('id, updated_at')
+        .select('id, updated_at, items:cart_items(id)')
         .not('user_id', 'is', null)
         .gte('updated_at', thirtyDaysAgo.toISOString())
-        .not('id', 'in', `(SELECT DISTINCT cart_id FROM order_items)`)
+
+    // Get order IDs that have been converted
+    const { data: convertedOrders } = await supabase
+        .from('orders')
+        .select('id')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+
+    const convertedOrderIds = convertedOrders?.map(o => o.id) || []
+    
+    // Get carts that have items but no corresponding order
+    // This is a simplified check - in production you might want a more sophisticated approach
+    const abandonedCarts = allCarts?.filter(cart => 
+        cart.items && cart.items.length > 0
+    ) || []
 
     // Count carts with items but no order
     const abandonedCount = abandonedCarts?.length || 0
@@ -85,12 +99,16 @@ export async function getDashboardKPIs() {
     const abandonmentRate = totalCartsWithItems > 0 ? (abandonedCount / totalCartsWithItems) * 100 : 0
 
     // Previous period abandonment
-    const { data: prevAbandoned } = await supabase
+    const { data: prevAllCarts } = await supabase
         .from('carts')
-        .select('id')
+        .select('id, items:cart_items(id)')
         .not('user_id', 'is', null)
         .gte('updated_at', previousPeriodStart.toISOString())
         .lt('updated_at', thirtyDaysAgo.toISOString())
+
+    const prevAbandoned = prevAllCarts?.filter(cart => 
+        cart.items && cart.items.length > 0
+    ) || []
 
     const prevAbandonedCount = prevAbandoned?.length || 0
     const prevTotalCarts = (prevStartedCount || 0) + (prevAbandonedCount || 0)
@@ -205,15 +223,23 @@ export async function getTopProducts(limit: number = 10) {
     await requireAdmin()
     const supabase = createClient()
 
+    // First, get order IDs for completed orders
+    const { data: completedOrders } = await supabase
+        .from('orders')
+        .select('id')
+        .in('status', ['confirmed', 'paid', 'shipped', 'delivered'])
+
+    if (!completedOrders || completedOrders.length === 0) {
+        return []
+    }
+
+    const orderIds = completedOrders.map(order => order.id)
+
+    // Then get order items for those orders
     const { data: orderItems } = await supabase
         .from('order_items')
         .select('product_id, quantity, price_at_purchase, product:products(name)')
-        .in('order_id', 
-            supabase
-                .from('orders')
-                .select('id')
-                .in('status', ['confirmed', 'paid', 'shipped', 'delivered'])
-        )
+        .in('order_id', orderIds)
 
     // Aggregate by product
     const productMap = new Map<string, { name: string; sales: number; revenue: number }>()

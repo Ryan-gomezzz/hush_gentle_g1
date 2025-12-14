@@ -19,6 +19,10 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
         return { message: error.message }
     }
 
+    // Merge anonymous cart with user cart on login
+    const { mergeCartsOnLogin } = await import('@/lib/actions/cart')
+    await mergeCartsOnLogin()
+
     revalidatePath('/', 'layout')
     redirect('/')
 }

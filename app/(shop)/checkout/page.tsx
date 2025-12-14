@@ -1,9 +1,18 @@
 import { createOrder } from '@/lib/actions/orders'
 import { Button } from '@/components/ui/button'
+import CheckoutTracker from '@/components/analytics/CheckoutTracker'
+import { trackPageViewServer } from '@/lib/analytics'
+import { createClient } from '@/lib/supabase-server'
 
-export default function CheckoutPage() {
+export default async function CheckoutPage() {
+    // Track checkout started server-side
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    await trackPageViewServer(user?.id, '/checkout', { event_name: 'checkout_started' })
+
     return (
         <div className="container mx-auto px-6 py-12 max-w-2xl">
+            <CheckoutTracker />
             <h1 className="text-3xl font-serif text-sage-900 mb-8 text-center">Checkout</h1>
 
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-sage-100">

@@ -62,10 +62,17 @@ export async function middleware(request: NextRequest) {
         if (!session) {
             return NextResponse.redirect(new URL('/login', request.url))
         }
-        // Admin check logic implies fetching profile. 
-        // For strict security, we'd check 'is_admin' here via RPC or a second fetch.
-        // For MVP speed, we rely on the fact that regular users don't see the dashboard link,
-        // and RLS policies (should) prevent them from editing products even if they access the page.
+
+        // Verify admin status
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', session.user.id)
+            .single()
+
+        if (!profile || !profile.is_admin) {
+            return NextResponse.redirect(new URL('/', request.url))
+        }
     }
 
     return response

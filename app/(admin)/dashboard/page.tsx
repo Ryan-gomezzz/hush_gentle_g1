@@ -1,41 +1,212 @@
-import { getDashboardStats, getRecentOrders } from '@/lib/actions/admin'
+import { getDashboardKPIs, getRecentOrders, getTopProducts } from '@/lib/actions/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
+import { DollarSign, ShoppingCart, TrendingUp, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react'
+
+function formatOrderId(orderId: string, createdAt: string): string {
+    const date = new Date(createdAt)
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '')
+    return `HG-${dateStr}-${orderId.slice(0, 4).toUpperCase()}`
+}
+
+function formatTimeAgo(date: string): string {
+    const now = new Date()
+    const orderDate = new Date(date)
+    const diffMs = now.getTime() - orderDate.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 60) return `${diffMins} minutes ago`
+    if (diffHours < 24) return `${diffHours} hours ago`
+    if (diffDays === 1) return 'Yesterday'
+    return `${diffDays} days ago`
+}
 
 export default async function DashboardPage() {
-    const stats = await getDashboardStats()
-    const recentOrders = await getRecentOrders()
+    const kpis = await getDashboardKPIs()
+    const recentOrders = await getRecentOrders(4)
+    const topProducts = await getTopProducts(4)
 
     return (
         <div>
-            <h1 className="text-3xl font-serif text-gray-800 mb-8">Dashboard Overview</h1>
+            <h1 className="text-3xl font-serif text-gray-800 mb-2">Dashboard</h1>
+            <p className="text-gray-600 mb-8">Welcome back! Here's what's happening with your store.</p>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Total Sales</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-500 flex items-center justify-between">
+                            Total Revenue
+                            <DollarSign className="w-4 h-4 text-gray-400" />
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-sage-900">₹{stats.totalSales.toFixed(2)}</div>
+                        <div className="text-3xl font-bold text-sage-900 mb-2">₹{kpis.totalRevenue.toLocaleString('en-IN')}</div>
+                        <div className="flex items-center gap-1 text-sm">
+                            {kpis.revenueChange >= 0 ? (
+                                <>
+                                    <ArrowUp className="w-4 h-4 text-green-500" />
+                                    <span className="text-green-500">+{kpis.revenueChange.toFixed(1)}%</span>
+                                </>
+                            ) : (
+                                <>
+                                    <ArrowDown className="w-4 h-4 text-red-500" />
+                                    <span className="text-red-500">{kpis.revenueChange.toFixed(1)}%</span>
+                                </>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Active Orders</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-500 flex items-center justify-between">
+                            Orders
+                            <ShoppingCart className="w-4 h-4 text-gray-400" />
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-sage-900">{stats.activeOrders}</div>
+                        <div className="text-3xl font-bold text-sage-900 mb-2">{kpis.orderCount}</div>
+                        <div className="flex items-center gap-1 text-sm">
+                            {kpis.orderChange >= 0 ? (
+                                <>
+                                    <ArrowUp className="w-4 h-4 text-green-500" />
+                                    <span className="text-green-500">+{kpis.orderChange.toFixed(1)}%</span>
+                                </>
+                            ) : (
+                                <>
+                                    <ArrowDown className="w-4 h-4 text-red-500" />
+                                    <span className="text-red-500">{kpis.orderChange.toFixed(1)}%</span>
+                                </>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Conversion Rate</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-500 flex items-center justify-between">
+                            Conversion Rate
+                            <TrendingUp className="w-4 h-4 text-gray-400" />
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-sage-900">{stats.conversionRate}%</div>
+                        <div className="text-3xl font-bold text-sage-900 mb-2">{kpis.conversionRate.toFixed(1)}%</div>
+                        <div className="flex items-center gap-1 text-sm">
+                            {kpis.conversionChange >= 0 ? (
+                                <>
+                                    <ArrowUp className="w-4 h-4 text-green-500" />
+                                    <span className="text-green-500">+{kpis.conversionChange.toFixed(1)}%</span>
+                                </>
+                            ) : (
+                                <>
+                                    <ArrowDown className="w-4 h-4 text-red-500" />
+                                    <span className="text-red-500">{kpis.conversionChange.toFixed(1)}%</span>
+                                </>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-gray-500 flex items-center justify-between">
+                            Cart Abandonment
+                            <AlertCircle className="w-4 h-4 text-gray-400" />
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-sage-900 mb-2">{kpis.abandonmentRate.toFixed(1)}%</div>
+                        <div className="flex items-center gap-1 text-sm">
+                            {kpis.abandonmentChange <= 0 ? (
+                                <>
+                                    <ArrowDown className="w-4 h-4 text-green-500" />
+                                    <span className="text-green-500">{kpis.abandonmentChange.toFixed(1)}%</span>
+                                </>
+                            ) : (
+                                <>
+                                    <ArrowUp className="w-4 h-4 text-red-500" />
+                                    <span className="text-red-500">+{kpis.abandonmentChange.toFixed(1)}%</span>
+                                </>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Recent Orders and Top Products */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Recent Orders */}
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle>Recent Orders</CardTitle>
+                        <Link href="/dashboard/orders" className="text-sm text-sage-600 hover:text-sage-900">View all</Link>
+                    </CardHeader>
+                    <CardContent>
+                        {recentOrders.length > 0 ? (
+                            <div className="space-y-4">
+                                {recentOrders.map((order: any) => {
+                                    const orderNumber = formatOrderId(order.id, order.created_at)
+                                    const timeAgo = formatTimeAgo(order.created_at)
+                                    const statusColors: Record<string, string> = {
+                                        confirmed: 'bg-green-100 text-green-800',
+                                        shipped: 'bg-purple-100 text-purple-800',
+                                        delivered: 'bg-green-100 text-green-800',
+                                        pending: 'bg-orange-100 text-orange-800',
+                                        paid: 'bg-blue-100 text-blue-800',
+                                        cancelled: 'bg-red-100 text-red-800',
+                                    }
+                                    return (
+                                        <div key={order.id} className="flex items-center justify-between pb-4 border-b last:border-0">
+                                            <div>
+                                                <div className="font-medium text-gray-900">{orderNumber}</div>
+                                                <div className="text-sm text-gray-500">
+                                                    {order.shipping_details?.fullName || order.user?.full_name || 'Guest'} • {timeAgo}
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="font-bold text-gray-900">₹{Number(order.total_amount).toFixed(2)}</div>
+                                                <span className={`px-2 py-1 rounded-full text-xs ${statusColors[order.status] || 'bg-gray-100 text-gray-800'}`}>
+                                                    {order.status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        ) : (
+                            <p className="text-gray-500 text-center py-8">No orders yet.</p>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Top Products */}
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle>Top Products</CardTitle>
+                        <Link href="/dashboard/products" className="text-sm text-sage-600 hover:text-sage-900">View all</Link>
+                    </CardHeader>
+                    <CardContent>
+                        {topProducts.length > 0 ? (
+                            <div className="space-y-4">
+                                {topProducts.map((product: any) => (
+                                    <div key={product.rank} className="flex items-center justify-between pb-4 border-b last:border-0">
+                                        <div>
+                                            <div className="font-medium text-gray-900">
+                                                {product.rank}. {product.name}
+                                            </div>
+                                            <div className="text-sm text-gray-500">
+                                                {product.sales} sales • ₹{product.revenue.toLocaleString('en-IN')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-gray-500 text-center py-8">No product data yet.</p>
+                        )}
                     </CardContent>
                 </Card>
             </div>

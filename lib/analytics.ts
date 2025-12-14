@@ -13,3 +13,33 @@ export async function trackEvent(userId: string | undefined | null, eventName: s
         console.error('Analytics error:', e)
     }
 }
+
+/**
+ * Track page view - call from client component
+ */
+export async function trackPageView(path: string, metadata: any = {}) {
+    try {
+        const response = await fetch('/api/analytics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                event_name: 'page_view',
+                path,
+                metadata,
+            }),
+        })
+        if (!response.ok) {
+            console.error('Failed to track page view')
+        }
+    } catch (e) {
+        // Analytics should not break the app
+        console.error('Analytics error:', e)
+    }
+}
+
+/**
+ * Server-side page view tracking
+ */
+export async function trackPageViewServer(userId: string | undefined | null, path: string, metadata: any = {}) {
+    await trackEvent(userId, 'page_view', { path, ...metadata })
+}

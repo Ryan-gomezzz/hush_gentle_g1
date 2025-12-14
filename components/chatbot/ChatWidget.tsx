@@ -12,6 +12,7 @@ export default function ChatWidget() {
     ])
     const [input, setInput] = useState('')
     const [loading, setLoading] = useState(false)
+    const [sessionId, setSessionId] = useState<string | null>(null)
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const scrollToBottom = () => {
@@ -37,9 +38,14 @@ export default function ChatWidget() {
             const res = await fetch('/api/chatbot', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: userMsg })
+                body: JSON.stringify({ message: userMsg, sessionId })
             })
             const data = await res.json()
+
+            // Update session ID if returned
+            if (data.sessionId && !sessionId) {
+                setSessionId(data.sessionId)
+            }
 
             setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
         } catch {

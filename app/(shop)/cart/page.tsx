@@ -1,8 +1,8 @@
-import { getCart, removeFromCart } from '@/lib/actions/cart'
+import { getCart, removeFromCart, updateCartItemQuantity } from '@/lib/actions/cart'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Minus, Plus } from 'lucide-react'
 
 export default async function CartPage() {
     const cart = await getCart()
@@ -36,16 +36,35 @@ export default async function CartPage() {
                                 </div>
                                 <div className="flex-1">
                                     <h3 className="font-serif text-sage-900">{item.product.name}</h3>
-                                    <p className="text-sm text-sage-500">₹{item.product.price} x {item.quantity}</p>
+                                    <p className="text-sm text-sage-500">₹{item.product.price} each</p>
                                 </div>
-                                <div className="font-bold text-sage-800 mr-4">
+                                <div className="flex items-center gap-3 mr-4">
+                                    <form action={async () => {
+                                        'use server'
+                                        await updateCartItemQuantity(item.id, Math.max(1, item.quantity - 1))
+                                    }}>
+                                        <button type="submit" className="p-1 rounded-full hover:bg-sage-100 transition-colors">
+                                            <Minus className="w-4 h-4 text-sage-600" />
+                                        </button>
+                                    </form>
+                                    <span className="font-medium text-sage-800 w-8 text-center">{item.quantity}</span>
+                                    <form action={async () => {
+                                        'use server'
+                                        await updateCartItemQuantity(item.id, item.quantity + 1)
+                                    }}>
+                                        <button type="submit" className="p-1 rounded-full hover:bg-sage-100 transition-colors">
+                                            <Plus className="w-4 h-4 text-sage-600" />
+                                        </button>
+                                    </form>
+                                </div>
+                                <div className="font-bold text-sage-800 mr-4 w-24 text-right">
                                     ₹{(item.product.price * item.quantity).toFixed(2)}
                                 </div>
                                 <form action={async () => {
                                     'use server'
                                     await removeFromCart(item.id)
                                 }}>
-                                    <button className="text-gray-400 hover:text-red-500 transition-colors">
+                                    <button type="submit" className="text-gray-400 hover:text-red-500 transition-colors">
                                         <Trash2 className="w-5 h-5" />
                                     </button>
                                 </form>

@@ -4,6 +4,8 @@ import { getProductBySlug } from '@/lib/actions/products';
 import { addToCart } from '@/lib/actions/cart';
 import { Button } from '@/components/ui/button';
 import { Star, Check } from 'lucide-react';
+import { trackEvent } from '@/lib/analytics';
+import { createClient } from '@/lib/supabase-server';
 
 export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
     const product = await getProductBySlug(params.slug);
@@ -11,6 +13,15 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
     if (!product) {
         notFound();
     }
+
+    // Track product view
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    await trackEvent(user?.id, 'product_view', {
+        product_id: product.id,
+        product_name: product.name,
+        product_slug: params.slug,
+    });
 
     const imageUrl = product.images?.[0] || '/placeholder.jpg';
 

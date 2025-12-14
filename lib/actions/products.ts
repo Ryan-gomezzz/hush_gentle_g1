@@ -87,3 +87,143 @@ export async function getFeaturedProducts(): Promise<Product[]> {
 
     return latest as Product[]
 }
+
+// Admin functions
+export async function getProductById(id: string): Promise<Product | null> {
+    const supabase = createClient()
+
+    const { data, error } = await supabase
+        .from('products')
+        .select('*, category:categories(slug, name)')
+        .eq('id', id)
+        .single()
+
+    if (error) {
+        console.error('Error fetching product:', error)
+        return null
+    }
+
+    return data as Product
+}
+
+export async function createProduct(formData: FormData) {
+    const { requireAdmin } = await import('@/lib/utils/admin-check')
+    await requireAdmin()
+
+    const supabase = createClient()
+
+    const name = formData.get('name') as string
+    const slug = formData.get('slug') as string
+    const description = formData.get('description') as string
+    const price = parseFloat(formData.get('price') as string)
+    const stock = parseInt(formData.get('stock') as string)
+    const categoryId = formData.get('category_id') as string
+    const isFeatured = formData.get('is_featured') === 'true'
+    const images = (formData.get('images') as string)?.split(',').filter(Boolean) || []
+    
+    // Parse attributes
+    const ingredients = (formData.get('ingredients') as string)?.split(',').filter(Boolean) || []
+    const benefits = formData.get('benefits') as string || ''
+    const usage = formData.get('usage') as string || ''
+
+    const attributes = {
+        ingredients,
+        benefits,
+        usage,
+    }
+
+    const { data, error } = await supabase
+        .from('products')
+        .insert({
+            name,
+            slug,
+            description,
+            price,
+            stock,
+            category_id: categoryId || null,
+            images,
+            attributes,
+            is_featured: isFeatured,
+            is_archived: false,
+        })
+        .select()
+        .single()
+
+    if (error) {
+        console.error('Error creating product:', error)
+        throw new Error('Failed to create product')
+    }
+
+    return data
+}
+
+export async function updateProduct(id: string, formData: FormData) {
+    const { requireAdmin } = await import('@/lib/utils/admin-check')
+    await requireAdmin()
+
+    const supabase = createClient()
+
+    const name = formData.get('name') as string
+    const slug = formData.get('slug') as string
+    const description = formData.get('description') as string
+    const price = parseFloat(formData.get('price') as string)
+    const stock = parseInt(formData.get('stock') as string)
+    const categoryId = formData.get('category_id') as string
+    const isFeatured = formData.get('is_featured') === 'true'
+    const isArchived = formData.get('is_archived') === 'true'
+    const images = (formData.get('images') as string)?.split(',').filter(Boolean) || []
+    
+    // Parse attributes
+    const ingredients = (formData.get('ingredients') as string)?.split(',').filter(Boolean) || []
+    const benefits = formData.get('benefits') as string || ''
+    const usage = formData.get('usage') as string || ''
+
+    const attributes = {
+        ingredients,
+        benefits,
+        usage,
+    }
+
+    const { data, error } = await supabase
+        .from('products')
+        .update({
+            name,
+            slug,
+            description,
+            price,
+            stock,
+            category_id: categoryId || null,
+            images,
+            attributes,
+            is_featured: isFeatured,
+            is_archived: isArchived,
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+    if (error) {
+        console.error('Error updating product:', error)
+        throw new Error('Failed to update product')
+    }
+
+    return data
+}
+
+export async function deleteProduct(id: string) {
+    const { requireAdmin } = await import('@/lib/utils/admin-check')
+    await requireAdmin()
+
+    const supabase = createClient()
+
+    // Soft delete by archiving
+    const { error } = await supabase
+        .from('products')
+        .update({ is_archived: true })
+        .eq('id', id)
+
+    if (error) {
+        console.error('Error deleting product:', error)
+        throw new Error('Failed to delete product')
+    }
+}

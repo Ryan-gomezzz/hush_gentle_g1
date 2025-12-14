@@ -18,6 +18,8 @@ export const metadata = {
     description: "Pure, organic, and gentle skincare for sensitive bodies. No chemicals, just nature.",
 };
 
+import PageViewTracker from '@/components/analytics/PageViewTracker'
+
 export default function RootLayout({
     children,
 }: {
@@ -26,6 +28,7 @@ export default function RootLayout({
     return (
         <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
             <body className="font-sans antialiased text-gray-900 bg-offwhite min-h-screen">
+                <PageViewTracker />
                 <main className="flex flex-col min-h-screen">
                     {children}
                 </main>

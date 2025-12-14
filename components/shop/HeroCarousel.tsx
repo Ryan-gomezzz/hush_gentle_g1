@@ -86,20 +86,32 @@ export default function HeroCarousel() {
                 </motion.div>
             </AnimatePresence>
 
-            {/* Hero Content Overlay (Always Visible) */}
+            {/* Logo at Top Center */}
+            <div className="absolute top-8 left-0 right-0 z-20 flex justify-center pointer-events-none">
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5, duration: 1 }}
+                >
+                    <Image
+                        src="/images/logo.png"
+                        alt="Hush Gentle Logo"
+                        width={200}
+                        height={67}
+                        className="object-contain drop-shadow-lg"
+                        priority
+                    />
+                </motion.div>
+            </div>
+
+            {/* Hero Content Overlay - Button Only */}
             <div className="absolute inset-0 z-20 flex flex-col justify-center items-center text-center px-4 pointer-events-none">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.5, duration: 1 }} // Delay text appearance
+                    transition={{ delay: 1.5, duration: 1 }}
                     className="flex flex-col items-center"
                 >
-                    <h1 className="text-5xl md:text-7xl font-serif text-white mb-6 drop-shadow-md leading-tight">
-                        Gentle on Skin, <br /> Honest to Nature.
-                    </h1>
-                    <p className="text-lg md:text-2xl text-white/90 mb-10 max-w-2xl mx-auto font-light drop-shadow-sm">
-                        Organic, cold-pressed, and cruelty-free. The soothing care your sensitive skin deserves.
-                    </p>
                     <div className="flex gap-4 pointer-events-auto">
                         <Link href="/products">
                             <button className="px-10 py-4 bg-white/90 text-sage-900 rounded-full text-lg hover:bg-white transition-all shadow-lg cursor-pointer">

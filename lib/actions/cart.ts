@@ -176,13 +176,19 @@ export async function addToCart(productId: string, quantity: number = 1) {
                 .select()
                 .single()
 
-            if (createError || !newCart) {
+            if (createError || !newCart || !newCart.id) {
                 throw new Error('Failed to create cart')
             }
 
             cartId = newCart.id
-            cookieStore.set('cartId', cartId)
+            if (cartId) {
+                cookieStore.set('cartId', cartId)
+            }
         }
+    }
+
+    if (!cartId) {
+        throw new Error('Failed to get or create cart')
     }
 
     // Upsert Item

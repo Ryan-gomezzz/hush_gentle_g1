@@ -3,11 +3,16 @@ import { Button } from '@/components/ui/button'
 import CheckoutTracker from '@/components/analytics/CheckoutTracker'
 import { trackPageViewServer } from '@/lib/analytics'
 import { createClient } from '@/lib/supabase-server'
+import { redirect } from 'next/navigation'
 
 export default async function CheckoutPage() {
     // Track checkout started server-side
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        redirect('/login')
+    }
     await trackPageViewServer(user?.id, '/checkout', { event_name: 'checkout_started' })
 
     return (
@@ -49,7 +54,14 @@ export default async function CheckoutPage() {
                     </div>
 
                     <div className="pt-4 border-t border-sage-100">
-                        <p className="text-sm text-sage-500 mb-4">Payment will be handled securely via Stripe (Simulated for Demo).</p>
+                        <h3 className="font-bold text-sage-800 mb-3">Payment Method</h3>
+                        <div className="space-y-2 mb-4">
+                            <label className="flex items-center gap-3 p-3 rounded-lg border border-sage-200 bg-beige-50 cursor-pointer">
+                                <input type="radio" name="paymentMethod" value="cod" defaultChecked />
+                                <span className="text-sage-800 font-medium">Cash on Delivery (COD)</span>
+                            </label>
+                            <p className="text-sm text-sage-500">For demo purposes, payment is set to Cash on Delivery.</p>
+                        </div>
                         <Button type="submit" size="lg" className="w-full">
                             Place Order
                         </Button>

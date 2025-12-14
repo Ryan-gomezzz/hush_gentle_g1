@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { Product } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { addToCart } from '@/lib/actions/cart'
 // import AddToCartButton from './AddToCartButton' // Client component
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -37,10 +38,18 @@ export default function ProductCard({ product }: { product: Product }) {
             </CardContent>
 
             <CardFooter className="px-2 pb-2">
-                {/* Placeholder for Client Component */}
-                <Button className="w-full bg-sage-500 hover:bg-sage-600 text-white">
-                    Add to Cart
-                </Button>
+                <form action={async () => {
+                    'use server'
+                    await addToCart(product.id, 1)
+                }} className="w-full">
+                    <Button
+                        type="submit"
+                        className="w-full bg-sage-500 hover:bg-sage-600 text-white"
+                        disabled={product.stock <= 0}
+                    >
+                        {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+                    </Button>
+                </form>
             </CardFooter>
         </Card>
     )

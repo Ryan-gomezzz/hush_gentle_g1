@@ -19,6 +19,10 @@ function generateOrderId(): string {
 export async function createOrder(formData: FormData) {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        redirect('/login')
+    }
     
     // Get cart using the new getCart function
     const cart = await getCart()
@@ -65,12 +69,15 @@ export async function createOrder(formData: FormData) {
         throw new Error('Invalid order total')
     }
 
+    const paymentMethod = (formData.get('paymentMethod') as string) || 'cod'
+
     const shippingDetails = {
         fullName: formData.get('fullName') as string,
         address: formData.get('address') as string,
         city: formData.get('city') as string,
         zip: formData.get('zip') as string,
         email: formData.get('email') as string,
+        payment_method: paymentMethod,
     }
 
     // Validate shipping details
@@ -83,7 +90,7 @@ export async function createOrder(formData: FormData) {
     const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
-            user_id: user?.id || null,
+            user_id: user.id,
             total_amount: totalAmount,
             status: 'pending',
             shipping_details: shippingDetails,
@@ -118,6 +125,18 @@ export async function createOrder(formData: FormData) {
         await supabase.from('orders').delete().eq('id', order.id)
         throw new Error('Failed to create order items')
     }
+
+    // 3.5 Create a payment record for COD (manual payment)
+    await supabase
+        .from('payments')
+        .insert({
+            order_id: order.id,
+            provider: 'manual',
+            status: 'pending',
+            amount: totalAmount,
+            transaction_id: null,
+            metadata: { method: paymentMethod },
+        })
 
     // 4. Update product stock
     for (const item of validatedItems) {

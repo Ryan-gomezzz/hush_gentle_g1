@@ -2,8 +2,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getCart } from '@/lib/actions/cart'
 import { ShoppingBag, User } from 'lucide-react'
+import { createClient } from '@/lib/supabase-server'
+import { signout } from '@/lib/actions/auth'
 
 export default async function Header() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
     const cart = await getCart()
     const itemCount = cart?.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0
 
@@ -32,9 +36,28 @@ export default async function Header() {
 
                 {/* Icons */}
                 <div className="flex gap-6 items-center">
-                    <Link href="/login" className="text-sage-700 hover:text-sage-900">
-                        <User className="w-5 h-5" />
-                    </Link>
+                    {user ? (
+                        <div className="flex items-center gap-3">
+                            <Link href="/wishlist" className="text-sage-700 hover:text-sage-900 text-sm font-medium">
+                                Wishlist
+                            </Link>
+                            <form action={signout}>
+                                <button type="submit" className="text-sage-700 hover:text-sage-900 text-sm font-medium">
+                                    Sign out
+                                </button>
+                            </form>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-3">
+                            <Link href="/signup" className="text-sage-700 hover:text-sage-900 text-sm font-medium">
+                                Sign up
+                            </Link>
+                            <Link href="/login" className="text-sage-700 hover:text-sage-900 flex items-center gap-1">
+                                <User className="w-5 h-5" />
+                                <span className="hidden md:inline text-sm">Login</span>
+                            </Link>
+                        </div>
+                    )}
                     <Link href="/cart" className="relative text-sage-700 hover:text-sage-900 flex items-center gap-1">
                         <ShoppingBag className="w-5 h-5" />
                         {itemCount > 0 && (

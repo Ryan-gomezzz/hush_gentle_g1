@@ -3,6 +3,8 @@
 import { useFormState, useFormStatus } from 'react-dom'
 import { signup } from '@/lib/actions/auth'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -21,6 +23,15 @@ const initialState = {
 
 export default function SignupPage() {
     const [state, formAction] = useFormState(signup, initialState)
+    const router = useRouter()
+
+    // Handle successful signup redirect
+    useEffect(() => {
+        if (state?.message === 'SUCCESS_REDIRECT') {
+            router.push('/')
+            router.refresh()
+        }
+    }, [state?.message, router])
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-beige-50 px-4">
@@ -65,8 +76,10 @@ export default function SignupPage() {
                                 className="w-full px-3 py-2 border border-sage-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sage-500 bg-white/50"
                             />
                         </div>
-                        {state?.message && (
-                            <p className="text-sm text-red-500 text-center">{state.message}</p>
+                        {state?.message && state.message !== 'SUCCESS_REDIRECT' && (
+                            <p className={`text-sm text-center ${state.message.includes('error') || state.message.includes('failed') ? 'text-red-500' : 'text-sage-600'}`}>
+                                {state.message}
+                            </p>
                         )}
                         <SubmitButton />
                     </form>

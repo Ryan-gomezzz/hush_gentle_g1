@@ -29,6 +29,19 @@ export default async function DashboardPage() {
         const recentOrders = await getRecentOrders(4)
         const topProducts = await getTopProducts(4)
 
+        // Ensure all KPI values have defaults to prevent undefined errors
+        const safeKpis = {
+            totalRevenue: kpis?.totalRevenue ?? 0,
+            revenueChange: kpis?.revenueChange ?? 0,
+            conversionRate: kpis?.conversionRate ?? 0,
+            conversionChange: kpis?.conversionChange ?? 0,
+            activeCarts: kpis?.activeCarts ?? 0,
+            orderCount: kpis?.orderCount ?? 0,
+            orderChange: kpis?.orderChange ?? 0,
+            abandonmentRate: kpis?.abandonmentRate ?? 0,
+            abandonmentChange: kpis?.abandonmentChange ?? 0,
+        }
+
         return (
         <div>
             <h1 className="text-3xl font-serif text-gray-800 mb-2">Dashboard</h1>
@@ -44,17 +57,17 @@ export default async function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-sage-900 mb-2">₹{kpis.totalRevenue.toLocaleString('en-IN')}</div>
+                        <div className="text-3xl font-bold text-sage-900 mb-2">₹{safeKpis.totalRevenue.toLocaleString('en-IN')}</div>
                         <div className="flex items-center gap-1 text-sm">
-                            {kpis.revenueChange >= 0 ? (
+                            {safeKpis.revenueChange >= 0 ? (
                                 <>
                                     <ArrowUp className="w-4 h-4 text-green-500" />
-                                    <span className="text-green-500">+{kpis.revenueChange.toFixed(1)}%</span>
+                                    <span className="text-green-500">+{safeKpis.revenueChange.toFixed(1)}%</span>
                                 </>
                             ) : (
                                 <>
                                     <ArrowDown className="w-4 h-4 text-red-500" />
-                                    <span className="text-red-500">{kpis.revenueChange.toFixed(1)}%</span>
+                                    <span className="text-red-500">{safeKpis.revenueChange.toFixed(1)}%</span>
                                 </>
                             )}
                         </div>
@@ -69,17 +82,17 @@ export default async function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-sage-900 mb-2">{kpis.orderCount}</div>
+                        <div className="text-3xl font-bold text-sage-900 mb-2">{safeKpis.orderCount}</div>
                         <div className="flex items-center gap-1 text-sm">
-                            {kpis.orderChange >= 0 ? (
+                            {safeKpis.orderChange >= 0 ? (
                                 <>
                                     <ArrowUp className="w-4 h-4 text-green-500" />
-                                    <span className="text-green-500">+{kpis.orderChange.toFixed(1)}%</span>
+                                    <span className="text-green-500">+{safeKpis.orderChange.toFixed(1)}%</span>
                                 </>
                             ) : (
                                 <>
                                     <ArrowDown className="w-4 h-4 text-red-500" />
-                                    <span className="text-red-500">{kpis.orderChange.toFixed(1)}%</span>
+                                    <span className="text-red-500">{safeKpis.orderChange.toFixed(1)}%</span>
                                 </>
                             )}
                         </div>
@@ -94,17 +107,17 @@ export default async function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-sage-900 mb-2">{kpis.conversionRate.toFixed(1)}%</div>
+                        <div className="text-3xl font-bold text-sage-900 mb-2">{safeKpis.conversionRate.toFixed(1)}%</div>
                         <div className="flex items-center gap-1 text-sm">
-                            {kpis.conversionChange >= 0 ? (
+                            {safeKpis.conversionChange >= 0 ? (
                                 <>
                                     <ArrowUp className="w-4 h-4 text-green-500" />
-                                    <span className="text-green-500">+{kpis.conversionChange.toFixed(1)}%</span>
+                                    <span className="text-green-500">+{safeKpis.conversionChange.toFixed(1)}%</span>
                                 </>
                             ) : (
                                 <>
                                     <ArrowDown className="w-4 h-4 text-red-500" />
-                                    <span className="text-red-500">{kpis.conversionChange.toFixed(1)}%</span>
+                                    <span className="text-red-500">{safeKpis.conversionChange.toFixed(1)}%</span>
                                 </>
                             )}
                         </div>
@@ -119,17 +132,17 @@ export default async function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-sage-900 mb-2">{kpis.abandonmentRate.toFixed(1)}%</div>
+                        <div className="text-3xl font-bold text-sage-900 mb-2">{safeKpis.abandonmentRate.toFixed(1)}%</div>
                         <div className="flex items-center gap-1 text-sm">
-                            {kpis.abandonmentChange <= 0 ? (
+                            {safeKpis.abandonmentChange <= 0 ? (
                                 <>
                                     <ArrowDown className="w-4 h-4 text-green-500" />
-                                    <span className="text-green-500">{kpis.abandonmentChange.toFixed(1)}%</span>
+                                    <span className="text-green-500">{safeKpis.abandonmentChange.toFixed(1)}%</span>
                                 </>
                             ) : (
                                 <>
                                     <ArrowUp className="w-4 h-4 text-red-500" />
-                                    <span className="text-red-500">+{kpis.abandonmentChange.toFixed(1)}%</span>
+                                    <span className="text-red-500">+{safeKpis.abandonmentChange.toFixed(1)}%</span>
                                 </>
                             )}
                         </div>

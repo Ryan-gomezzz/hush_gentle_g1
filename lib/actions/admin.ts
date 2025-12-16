@@ -11,17 +11,8 @@ export async function getDashboardKPIs() {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
     const previousPeriodStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
 
-    // Optimized: Use parallel queries and aggregate in database where possible
-    const [
-        { data: recentOrders },
-        { data: previousOrders },
-        { data: checkoutStarted },
-        { data: checkoutCompleted },
-        { data: prevStarted },
-        { data: prevCompleted },
-        { data: allCarts },
-        { data: prevAllCarts },
-    ] = await Promise.all([
+    // Use Promise.allSettled to handle individual query failures gracefully
+    const results = await Promise.allSettled([
         // 1. Recent orders (last 30 days)
         supabase
             .from('orders')
@@ -80,6 +71,16 @@ export async function getDashboardKPIs() {
             .gte('updated_at', previousPeriodStart.toISOString())
             .lt('updated_at', thirtyDaysAgo.toISOString()),
     ])
+
+    // Extract data from results, defaulting to empty array on failure
+    const recentOrders = results[0].status === 'fulfilled' ? (results[0].value.data || []) : []
+    const previousOrders = results[1].status === 'fulfilled' ? (results[1].value.data || []) : []
+    const checkoutStarted = results[2].status === 'fulfilled' ? (results[2].value.data || []) : []
+    const checkoutCompleted = results[3].status === 'fulfilled' ? (results[3].value.data || []) : []
+    const prevStarted = results[4].status === 'fulfilled' ? (results[4].value.data || []) : []
+    const prevCompleted = results[5].status === 'fulfilled' ? (results[5].value.data || []) : []
+    const allCarts = results[6].status === 'fulfilled' ? (results[6].value.data || []) : []
+    const prevAllCarts = results[7].status === 'fulfilled' ? (results[7].value.data || []) : []
 
     const totalRevenue = (recentOrders || []).reduce((sum: number, order: any) => sum + Number(order.total_amount || 0), 0)
     const prevRevenue = (previousOrders || []).reduce((sum: number, order: any) => sum + Number(order.total_amount || 0), 0)

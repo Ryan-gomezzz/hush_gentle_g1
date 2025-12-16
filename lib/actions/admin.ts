@@ -103,6 +103,19 @@ export async function getDashboardKPIs() {
         ? ((orderCount - prevOrderCount) / prevOrderCount) * 100
         : 0
 
+    // Calculate abandonment rate (checkout started but not completed)
+    const abandonmentRate = (checkoutStarted?.length || 0) > 0
+        ? (((checkoutStarted?.length || 0) - (checkoutCompleted?.length || 0)) / (checkoutStarted?.length || 1)) * 100
+        : 0
+
+    const prevAbandonmentRate = (prevStarted?.length || 0) > 0
+        ? (((prevStarted?.length || 0) - (prevCompleted?.length || 0)) / (prevStarted?.length || 1)) * 100
+        : 0
+
+    const abandonmentChange = prevAbandonmentRate > 0
+        ? abandonmentRate - prevAbandonmentRate
+        : 0
+
     return {
         totalRevenue,
         revenueChange,
@@ -111,6 +124,8 @@ export async function getDashboardKPIs() {
         activeCarts: allCarts?.length || 0,
         orderCount,
         orderChange,
+        abandonmentRate,
+        abandonmentChange,
     }
 }
 

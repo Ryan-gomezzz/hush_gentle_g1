@@ -194,8 +194,14 @@ export async function getOrderStats(startDate?: string, endDate?: string) {
             shipped: 0,
             delivered: 0,
             cancelled: 0,
+            total: 0,
+            totalRevenue: 0,
+            averageOrderValue: 0,
         }
     }
+
+    const completedOrders = orders.filter((o: any) => ['confirmed', 'paid', 'shipped', 'delivered'].includes(o.status))
+    const totalRevenue = completedOrders.reduce((sum: number, o: any) => sum + Number(o.total_amount || 0), 0)
 
     const stats = {
         pending: orders.filter((o: any) => o.status === 'pending').length,
@@ -203,14 +209,8 @@ export async function getOrderStats(startDate?: string, endDate?: string) {
         delivered: orders.filter((o: any) => o.status === 'delivered').length,
         cancelled: orders.filter((o: any) => o.status === 'cancelled').length,
         total: orders.length,
-        totalRevenue: orders
-            .filter((o: any) => ['confirmed', 'paid', 'shipped', 'delivered'].includes(o.status))
-            .reduce((sum: number, o: any) => sum + Number(o.total_amount || 0), 0),
-        averageOrderValue: orders.length > 0
-            ? orders
-                  .filter((o: any) => ['confirmed', 'paid', 'shipped', 'delivered'].includes(o.status))
-                  .reduce((sum: number, o: any) => sum + Number(o.total_amount || 0), 0) / orders.length
-            : 0,
+        totalRevenue: totalRevenue,
+        averageOrderValue: orders.length > 0 ? totalRevenue / orders.length : 0,
     }
 
     return stats

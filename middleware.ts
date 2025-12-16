@@ -63,14 +63,16 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(new URL('/login', request.url))
         }
 
-        // Verify admin status
-        const { data: profile } = await supabase
+        // Optimized: Check admin status from session metadata if available, otherwise query DB
+        // Note: Supabase Auth doesn't include custom claims by default, so we query DB
+        // For better performance, consider using Supabase RLS or caching admin status
+        const { data: profile, error } = await supabase
             .from('profiles')
             .select('is_admin')
             .eq('id', session.user.id)
             .single()
 
-        if (!profile || !profile.is_admin) {
+        if (error || !profile || !profile.is_admin) {
             return NextResponse.redirect(new URL('/', request.url))
         }
     }

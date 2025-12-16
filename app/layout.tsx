@@ -14,11 +14,12 @@ const playfair = Playfair_Display({
 });
 
 export const metadata = {
-    title: "Hush Gentle | Organic & Soothing Skincare",
-    description: "Pure, organic, and gentle skincare for sensitive bodies. No chemicals, just nature.",
+    title: "Hush Gentle | Natural & Soothing Skincare",
+    description: "Pure, natural, and gentle skincare for sensitive bodies. No harsh chemicals, just nature.",
 };
 
 import PageViewTracker from '@/components/analytics/PageViewTracker'
+import GeoLocationTracker from '@/components/analytics/GeoLocationTracker'
 
 export default function RootLayout({
     children,
@@ -29,6 +30,7 @@ export default function RootLayout({
         <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
             <body className="font-sans antialiased text-gray-900 bg-offwhite min-h-screen">
                 <PageViewTracker />
+                <GeoLocationTracker />
                 <main className="flex flex-col min-h-screen">
                     {children}
                 </main>

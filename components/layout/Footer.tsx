@@ -9,7 +9,7 @@ export default function Footer() {
                 <div>
                     <h3 className="text-2xl font-serif mb-4 text-sage-900">Hush Gentle</h3>
                     <p className="font-light text-sm text-sage-600 mb-6">
-                        Organic, honest, and gentle skincare for sensitive bodies. No chemicals, just nature.
+                        Natural, honest, and gentle skincare for sensitive bodies. No harsh chemicals, just nature.
                     </p>
                 </div>
 

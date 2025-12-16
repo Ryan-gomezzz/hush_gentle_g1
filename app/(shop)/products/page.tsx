@@ -6,10 +6,21 @@ import { cn } from "@/utils/cn";
 export default async function ProductsPage({
     searchParams,
 }: {
-    searchParams: { category?: string };
+    searchParams: { category?: string; search?: string };
 }) {
     const category = searchParams.category;
-    const products = await getProducts(category);
+    const searchQuery = searchParams.search;
+    let products = await getProducts(category);
+    
+    // Filter products by search query if provided
+    if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        products = products.filter(product => 
+            product.name.toLowerCase().includes(query) ||
+            product.description?.toLowerCase().includes(query) ||
+            product.attributes?.benefits?.toLowerCase().includes(query)
+        );
+    }
 
     const categories = [
         { label: "All", value: undefined },

@@ -1,7 +1,17 @@
 import { createClient } from '@/lib/supabase-server'
+import { hasAnalyticsConsent } from '@/lib/actions/user'
 
 export async function trackEvent(userId: string | undefined | null, eventName: string, metadata: any = {}) {
     try {
+        // DPDP Compliance: Check user consent before tracking
+        if (userId) {
+            const hasConsent = await hasAnalyticsConsent()
+            if (!hasConsent) {
+                // User has not consented, don't track
+                return
+            }
+        }
+
         const supabase = createClient()
         await supabase.from('analytics_events').insert({
             user_id: userId || null,

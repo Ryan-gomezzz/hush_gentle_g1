@@ -11,111 +11,107 @@ export async function getDashboardKPIs() {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
     const previousPeriodStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
 
-    // 1. Total Revenue (last 30 days)
-    const { data: recentOrders } = await supabase
-        .from('orders')
-        .select('total_amount, created_at')
-        .gte('created_at', thirtyDaysAgo.toISOString())
-        .in('status', ['confirmed', 'paid', 'shipped', 'delivered'])
+    // Optimized: Use parallel queries and aggregate in database where possible
+    const [
+        { data: recentOrders },
+        { data: previousOrders },
+        { data: checkoutStarted },
+        { data: checkoutCompleted },
+        { data: prevStarted },
+        { data: prevCompleted },
+        { data: allCarts },
+        { data: prevAllCarts },
+    ] = await Promise.all([
+        // 1. Recent orders (last 30 days)
+        supabase
+            .from('orders')
+            .select('total_amount, created_at')
+            .gte('created_at', thirtyDaysAgo.toISOString())
+            .in('status', ['confirmed', 'paid', 'shipped', 'delivered']),
+        
+        // 2. Previous period orders
+        supabase
+            .from('orders')
+            .select('total_amount')
+            .gte('created_at', previousPeriodStart.toISOString())
+            .lt('created_at', thirtyDaysAgo.toISOString())
+            .in('status', ['confirmed', 'paid', 'shipped', 'delivered']),
+        
+        // 3. Recent checkout started
+        supabase
+            .from('analytics_events')
+            .select('id')
+            .eq('event_name', 'checkout_started')
+            .gte('created_at', thirtyDaysAgo.toISOString()),
+        
+        // 4. Recent checkout completed
+        supabase
+            .from('analytics_events')
+            .select('id')
+            .eq('event_name', 'checkout_completed')
+            .gte('created_at', thirtyDaysAgo.toISOString()),
+        
+        // 5. Previous period checkout started
+        supabase
+            .from('analytics_events')
+            .select('id')
+            .eq('event_name', 'checkout_started')
+            .gte('created_at', previousPeriodStart.toISOString())
+            .lt('created_at', thirtyDaysAgo.toISOString()),
+        
+        // 6. Previous period checkout completed
+        supabase
+            .from('analytics_events')
+            .select('id')
+            .eq('event_name', 'checkout_completed')
+            .gte('created_at', previousPeriodStart.toISOString())
+            .lt('created_at', thirtyDaysAgo.toISOString()),
+        
+        // 7. Recent carts with items
+        supabase
+            .from('carts')
+            .select('id, updated_at, items:cart_items(id)')
+            .not('user_id', 'is', null)
+            .gte('updated_at', thirtyDaysAgo.toISOString()),
+        
+        // 8. Previous period carts
+        supabase
+            .from('carts')
+            .select('id, items:cart_items(id)')
+            .not('user_id', 'is', null)
+            .gte('updated_at', previousPeriodStart.toISOString())
+            .lt('updated_at', thirtyDaysAgo.toISOString()),
+    ])
 
-    const { data: previousOrders } = await supabase
-        .from('orders')
-        .select('total_amount')
-        .gte('created_at', previousPeriodStart.toISOString())
-        .lt('created_at', thirtyDaysAgo.toISOString())
-        .in('status', ['confirmed', 'paid', 'shipped', 'delivered'])
-
+    // Calculate metrics
     const totalRevenue = recentOrders?.reduce((acc, o) => acc + Number(o.total_amount || 0), 0) || 0
     const previousRevenue = previousOrders?.reduce((acc, o) => acc + Number(o.total_amount || 0), 0) || 0
     const revenueChange = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0
 
-    // 2. Total Orders (last 30 days)
     const orderCount = recentOrders?.length || 0
     const previousOrderCount = previousOrders?.length || 0
     const orderChange = previousOrderCount > 0 ? ((orderCount - previousOrderCount) / previousOrderCount) * 100 : 0
 
-    // 3. Conversion Rate
-    const { data: checkoutStarted } = await supabase
-        .from('analytics_events')
-        .select('id')
-        .eq('event_name', 'checkout_started')
-        .gte('created_at', thirtyDaysAgo.toISOString())
-
-    const { data: checkoutCompleted } = await supabase
-        .from('analytics_events')
-        .select('id')
-        .eq('event_name', 'checkout_completed')
-        .gte('created_at', thirtyDaysAgo.toISOString())
-
     const startedCount = checkoutStarted?.length || 0
     const completedCount = checkoutCompleted?.length || 0
     const conversionRate = startedCount > 0 ? (completedCount / startedCount) * 100 : 0
-
-    // Previous period conversion rate
-    const { data: prevStarted } = await supabase
-        .from('analytics_events')
-        .select('id')
-        .eq('event_name', 'checkout_started')
-        .gte('created_at', previousPeriodStart.toISOString())
-        .lt('created_at', thirtyDaysAgo.toISOString())
-
-    const { data: prevCompleted } = await supabase
-        .from('analytics_events')
-        .select('id')
-        .eq('event_name', 'checkout_completed')
-        .gte('created_at', previousPeriodStart.toISOString())
-        .lt('created_at', thirtyDaysAgo.toISOString())
 
     const prevStartedCount = prevStarted?.length || 0
     const prevCompletedCount = prevCompleted?.length || 0
     const prevConversionRate = prevStartedCount > 0 ? (prevCompletedCount / prevStartedCount) * 100 : 0
     const conversionChange = prevConversionRate > 0 ? conversionRate - prevConversionRate : 0
 
-    // 4. Cart Abandonment Rate
-    // Get all carts with items
-    const { data: allCarts } = await supabase
-        .from('carts')
-        .select('id, updated_at, items:cart_items(id)')
-        .not('user_id', 'is', null)
-        .gte('updated_at', thirtyDaysAgo.toISOString())
-
-    // Get order IDs that have been converted
-    const { data: convertedOrders } = await supabase
-        .from('orders')
-        .select('id')
-        .gte('created_at', thirtyDaysAgo.toISOString())
-
-    const convertedOrderIds = convertedOrders?.map(o => o.id) || []
-    
-    // Get carts that have items but no corresponding order
-    // This is a simplified check - in production you might want a more sophisticated approach
-    const abandonedCarts = allCarts?.filter(cart => 
-        cart.items && cart.items.length > 0
-    ) || []
-
-    // Count carts with items but no order
+    const abandonedCarts = allCarts?.filter(cart => cart.items && cart.items.length > 0) || []
     const abandonedCount = abandonedCarts?.length || 0
     const totalCartsWithItems = (startedCount || 0) + (abandonedCount || 0)
     const abandonmentRate = totalCartsWithItems > 0 ? (abandonedCount / totalCartsWithItems) * 100 : 0
 
-    // Previous period abandonment
-    const { data: prevAllCarts } = await supabase
-        .from('carts')
-        .select('id, items:cart_items(id)')
-        .not('user_id', 'is', null)
-        .gte('updated_at', previousPeriodStart.toISOString())
-        .lt('updated_at', thirtyDaysAgo.toISOString())
-
-    const prevAbandoned = prevAllCarts?.filter(cart => 
-        cart.items && cart.items.length > 0
-    ) || []
-
+    const prevAbandoned = prevAllCarts?.filter(cart => cart.items && cart.items.length > 0) || []
     const prevAbandonedCount = prevAbandoned?.length || 0
     const prevTotalCarts = (prevStartedCount || 0) + (prevAbandonedCount || 0)
     const prevAbandonmentRate = prevTotalCarts > 0 ? (prevAbandonedCount / prevTotalCarts) * 100 : 0
     const abandonmentChange = prevAbandonmentRate > 0 ? abandonmentRate - prevAbandonmentRate : 0
 
-    // Ensure all values are numbers and handle edge cases
     return {
         totalRevenue: Math.round((totalRevenue || 0) * 100) / 100,
         revenueChange: Math.round((revenueChange || 0) * 100) / 100,
@@ -178,67 +174,41 @@ export async function getAllOrders() {
     await requireAdmin()
     const supabase = createClient()
     
-    // First, get orders without joins to avoid RLS issues
-    const { data: orders, error: ordersError } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-    if (ordersError) {
-        console.error('Error fetching orders:', ordersError)
-        return []
-    }
-
-    if (!orders || orders.length === 0) {
-        console.log('No orders found in database')
-        return []
-    }
-
-    console.log(`Found ${orders.length} orders`)
-
-    // Get user profiles for orders that have user_id
-    const userIds = orders.map(o => o.user_id).filter(Boolean) as string[]
-    let profilesMap = new Map<string, any>()
-    
-    if (userIds.length > 0) {
-        const { data: profiles, error: profilesError } = await supabase
+    // Optimized: Fetch all data in parallel to avoid sequential N+1 queries
+    const [ordersResult, profilesResult, orderItemsResult, productsResult] = await Promise.all([
+        supabase
+            .from('orders')
+            .select('*')
+            .order('created_at', { ascending: false }),
+        supabase
             .from('profiles')
-            .select('id, full_name, email')
-            .in('id', userIds)
-
-        if (!profilesError && profiles) {
-            profiles.forEach((profile: any) => {
-                profilesMap.set(profile.id, profile)
-            })
-        }
-    }
-
-    // Get order items for each order
-    const orderIds = orders.map(o => o.id)
-    const { data: orderItems, error: itemsError } = await supabase
-        .from('order_items')
-        .select('*')
-        .in('order_id', orderIds)
-
-    // Get product names for order items
-    const productIds = orderItems?.map((item: any) => item.product_id).filter(Boolean) || []
-    let productsMap = new Map<string, any>()
-    
-    if (productIds.length > 0) {
-        const { data: products, error: productsError } = await supabase
+            .select('id, full_name, email'),
+        supabase
+            .from('order_items')
+            .select('*'),
+        supabase
             .from('products')
-            .select('id, name')
-            .in('id', productIds)
+            .select('id, name'),
+    ])
 
-        if (!productsError && products) {
-            products.forEach((product: any) => {
-                productsMap.set(product.id, product)
-            })
+    const { data: orders, error: ordersError } = ordersResult
+    const { data: profiles } = profilesResult
+    const { data: orderItems } = orderItemsResult
+    const { data: products } = productsResult
+
+    if (ordersError || !orders || orders.length === 0) {
+        if (ordersError) {
+            console.error('Error fetching orders:', ordersError)
         }
+        return []
     }
 
-    // Group items by order_id and attach product info
+    // Create lookup maps for O(1) access
+    const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]))
+    const productsMap = new Map((products || []).map((p: any) => [p.id, p]))
     const itemsByOrderId = new Map<string, any[]>()
+
+    // Group order items by order_id
     orderItems?.forEach((item: any) => {
         const orderId = item.order_id
         if (!itemsByOrderId.has(orderId)) {
@@ -250,15 +220,12 @@ export async function getAllOrders() {
         })
     })
 
-    // Attach items and user info to orders
-    return orders.map((order: any) => {
-        const user = order.user_id ? profilesMap.get(order.user_id) : null
-        return {
-            ...order,
-            user: user || null,
-            items: itemsByOrderId.get(order.id) || [],
-        }
-    })
+    // Attach user and items to orders
+    return orders.map((order: any) => ({
+        ...order,
+        user: order.user_id ? profilesMap.get(order.user_id) || null : null,
+        items: itemsByOrderId.get(order.id) || [],
+    }))
 }
 
 export async function getOrderById(id: string) {

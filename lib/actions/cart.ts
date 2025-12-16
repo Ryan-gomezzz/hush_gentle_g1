@@ -232,6 +232,143 @@ export async function addToCart(productId: string, quantity: number = 1) {
     revalidatePath('/', 'layout')
 }
 
+export async function addToCartWithSku(productId: string, quantity: number = 1, skuId?: string) {
+    const supabase = createClient()
+    const cookieStore = cookies()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Validate stock - check SKU if provided, otherwise product
+    let stock: number
+    let productName: string
+
+    if (skuId) {
+        const { data: sku } = await supabase
+            .from('product_skus')
+            .select('stock, product:products(name)')
+            .eq('id', skuId)
+            .single()
+
+        if (!sku) {
+            throw new Error('SKU not found')
+        }
+
+        stock = sku.stock
+        productName = (sku.product as any).name
+    } else {
+        const { data: product } = await supabase
+            .from('products')
+            .select('stock, name')
+            .eq('id', productId)
+            .single()
+
+        if (!product) {
+            throw new Error('Product not found')
+        }
+
+        stock = product.stock
+        productName = product.name
+    }
+
+    if (stock < quantity) {
+        throw new Error(`Only ${stock} items available in stock`)
+    }
+
+    let cartId: string | undefined
+
+    if (user) {
+        const { data: userCart } = await supabase
+            .from('carts')
+            .select('id')
+            .eq('user_id', user.id)
+            .single()
+
+        if (userCart) {
+            cartId = userCart.id
+        } else {
+            const { data: newCart, error: createError } = await supabase
+                .from('carts')
+                .insert({ user_id: user.id })
+                .select()
+                .single()
+
+            if (createError || !newCart) {
+                throw new Error('Failed to create cart')
+            }
+            cartId = newCart.id
+        }
+    } else {
+        cartId = cookieStore.get('cartId')?.value
+
+        if (!cartId) {
+            const { data: newCart, error: createError } = await supabase
+                .from('carts')
+                .insert({ session_id: crypto.randomUUID() })
+                .select()
+                .single()
+
+            if (createError || !newCart || !newCart.id) {
+                throw new Error('Failed to create cart')
+            }
+
+            cartId = newCart.id
+            if (cartId) {
+                cookieStore.set('cartId', cartId)
+            }
+        }
+    }
+
+    if (!cartId) {
+        throw new Error('Failed to get or create cart')
+    }
+
+    // Check for existing item with same product and SKU
+    let query = supabase
+        .from('cart_items')
+        .select('*')
+        .eq('cart_id', cartId)
+        .eq('product_id', productId)
+
+    if (skuId) {
+        query = query.eq('sku_id', skuId)
+    } else {
+        query = query.is('sku_id', null)
+    }
+
+    const { data: existingItem } = await query.single()
+
+    const newQuantity = existingItem ? existingItem.quantity + quantity : quantity
+
+    if (stock < newQuantity) {
+        throw new Error(`Only ${stock} items available in stock`)
+    }
+
+    if (existingItem) {
+        await supabase
+            .from('cart_items')
+            .update({ quantity: newQuantity })
+            .eq('id', existingItem.id)
+    } else {
+        await supabase
+            .from('cart_items')
+            .insert({
+                cart_id: cartId,
+                product_id: productId,
+                sku_id: skuId || null,
+                quantity: quantity,
+            })
+    }
+
+    await trackEvent(user?.id, 'add_to_cart', {
+        product_id: productId,
+        product_name: productName,
+        sku_id: skuId,
+        quantity: quantity,
+    })
+
+    revalidatePath('/cart')
+    revalidatePath('/', 'layout')
+}
+
 export async function updateCartItemQuantity(itemId: string, quantity: number) {
     const supabase = createClient()
 

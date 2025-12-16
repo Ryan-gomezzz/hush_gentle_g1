@@ -77,7 +77,7 @@ export default function SettingsDeleteAccount() {
                     type="button"
                     onClick={handleDelete}
                     disabled={isPending || (showConfirm && confirmText !== 'DELETE')}
-                    variant="destructive"
+                    className="bg-red-600 hover:bg-red-700 text-white"
                 >
                     {isPending ? 'Deleting...' : showConfirm ? 'Confirm Deletion' : 'Delete My Account'}
                 </Button>

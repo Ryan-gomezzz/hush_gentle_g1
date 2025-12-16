@@ -145,12 +145,33 @@ export async function createProduct(formData: FormData) {
         throw new Error('Slug must contain only lowercase letters, numbers, and hyphens')
     }
     
-    // Parse images - support both comma-separated and newline-separated
+    // Parse images - support JSON array from ImageUpload component or comma/newline-separated URLs
     const imagesInput = formData.get('images') as string || ''
-    const images = imagesInput
-        .split(/[,\n]/)
-        .map(img => img.trim())
-        .filter(Boolean)
+    let images: string[] = []
+    
+    try {
+        // Try to parse as JSON array first (from ImageUpload component)
+        const parsed = JSON.parse(imagesInput)
+        if (Array.isArray(parsed)) {
+            images = parsed.filter(Boolean)
+        } else {
+            // Fallback to string parsing
+            images = imagesInput
+                .split(/[,\n]/)
+                .map(img => img.trim())
+                .filter(Boolean)
+        }
+    } catch {
+        // Not JSON, parse as comma/newline-separated string
+        images = imagesInput
+            .split(/[,\n]/)
+            .map(img => img.trim())
+            .filter(Boolean)
+    }
+    
+    if (images.length === 0) {
+        throw new Error('At least one image is required')
+    }
     
     // Parse attributes
     const ingredients = (formData.get('ingredients') as string)?.split(',').filter(Boolean) || []
@@ -235,7 +256,34 @@ export async function updateProduct(id: string, formData: FormData) {
     const categoryId = formData.get('category_id') as string
     const isFeatured = formData.get('is_featured') === 'true'
     const isArchived = formData.get('is_archived') === 'true'
-    const images = (formData.get('images') as string)?.split(',').filter(Boolean) || []
+    
+    // Parse images - support JSON array from ImageUpload component or comma-separated URLs
+    const imagesInput = formData.get('images') as string || ''
+    let images: string[] = []
+    
+    try {
+        // Try to parse as JSON array first (from ImageUpload component)
+        const parsed = JSON.parse(imagesInput)
+        if (Array.isArray(parsed)) {
+            images = parsed.filter(Boolean)
+        } else {
+            // Fallback to string parsing
+            images = imagesInput
+                .split(',')
+                .map(img => img.trim())
+                .filter(Boolean)
+        }
+    } catch {
+        // Not JSON, parse as comma-separated string
+        images = imagesInput
+            .split(',')
+            .map(img => img.trim())
+            .filter(Boolean)
+    }
+    
+    if (images.length === 0) {
+        throw new Error('At least one image is required')
+    }
     
     // Parse attributes
     const ingredients = (formData.get('ingredients') as string)?.split(',').filter(Boolean) || []

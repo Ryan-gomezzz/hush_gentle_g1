@@ -24,11 +24,12 @@ function formatTimeAgo(date: string): string {
 }
 
 export default async function DashboardPage() {
-    const kpis = await getDashboardKPIs()
-    const recentOrders = await getRecentOrders(4)
-    const topProducts = await getTopProducts(4)
+    try {
+        const kpis = await getDashboardKPIs()
+        const recentOrders = await getRecentOrders(4)
+        const topProducts = await getTopProducts(4)
 
-    return (
+        return (
         <div>
             <h1 className="text-3xl font-serif text-gray-800 mb-2">Dashboard</h1>
             <p className="text-gray-600 mb-8">Welcome back! Here's what's happening with your store.</p>
@@ -258,5 +259,19 @@ export default async function DashboardPage() {
                 </CardContent>
             </Card>
         </div>
-    );
+        )
+    } catch (error: any) {
+        console.error('Dashboard error:', error)
+        return (
+            <div className="p-8">
+                <h1 className="text-3xl font-serif text-gray-800 mb-2">Dashboard</h1>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4">
+                    <h2 className="text-lg font-semibold text-red-900 mb-2">Error Loading Dashboard</h2>
+                    <p className="text-red-700">
+                        {error?.message || 'An error occurred while loading the dashboard. Please try refreshing the page.'}
+                    </p>
+                </div>
+            </div>
+        )
+    }
 }

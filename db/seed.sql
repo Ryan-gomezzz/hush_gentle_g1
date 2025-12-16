@@ -1,8 +1,8 @@
 -- Seed Categories
 INSERT INTO public.categories (name, slug, description) VALUES
-('Hand Care', 'hand-care', 'Gentle organic care for your hands'),
+('Hand Care', 'hand-care', 'Gentle natural care for your hands'),
 ('Foot Care', 'foot-care', 'Soothing treatments for tired feet'),
-('Body Care', 'body-care', 'Luxurious organic body butters'),
+('Body Care', 'body-care', 'Luxurious natural body butters'),
 ('Face Care', 'face-care', 'Delicate formulas for sensitive skin')
 ON CONFLICT (slug) DO NOTHING;
 
@@ -89,4 +89,4 @@ ON CONFLICT (slug) DO UPDATE SET
 INSERT INTO public.testimonials (author_name, role, content, rating) VALUES
 ('Sarah M.', 'Verified Buyer', 'Finally a hand butter that doesn''t feel greasy! Smells divine.', 5),
 ('David K.', 'Verified Buyer', 'My cracked heels are gone after just a week. Highly recommend the foot butter.', 5),
-('Elena R.', 'Loyal Customer', 'I love that everything is actually organic. No hidden chemicals.', 5);
+('Elena R.', 'Loyal Customer', 'I love that everything uses natural ingredients. No hidden chemicals.', 5);

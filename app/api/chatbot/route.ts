@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { getProducts } from '@/lib/actions/products'
 import { createClient } from '@/lib/supabase-server'
+import { chatbotMessageSchema } from '@/lib/utils/validation'
+import { checkRateLimit } from '@/lib/utils/rate-limit'
+import { headers } from 'next/headers'
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -10,16 +13,39 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
     try {
-        const { message, sessionId } = await req.json()
+        // Rate limiting: 20 requests per minute per user/IP
+        const headersList = headers()
+        const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown'
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
+        
+        const identifier = user?.id || ip
+        if (!checkRateLimit(identifier, 20, 60000)) {
+            return NextResponse.json(
+                { reply: "I'm taking a moment to breathe. Please try again in a minute.", sessionId: null },
+                { status: 429 }
+            )
+        }
+
+        // Validate input
+        const body = await req.json()
+        const validationResult = chatbotMessageSchema.safeParse(body)
+        
+        if (!validationResult.success) {
+            return NextResponse.json(
+                { reply: "I didn't quite understand that. Could you rephrase?", sessionId: null },
+                { status: 400 }
+            )
+        }
+
+        const { message, sessionId } = validationResult.data
 
         // Get or create session
         let currentSessionId = sessionId
         if (!currentSessionId) {
             const { data: newSession, error: sessionError } = await supabase
                 .from('chatbot_sessions')
-                .insert({ user_id: user?.id || null })
+                .insert({ user_id: user?.id || null, converted: false })
                 .select()
                 .single()
 
@@ -27,6 +53,24 @@ export async function POST(req: Request) {
                 console.error('Failed to create session:', sessionError)
             } else {
                 currentSessionId = newSession.id
+            }
+        } else {
+            // Check if session was converted (user made a purchase)
+            if (user?.id) {
+                const { data: orders } = await supabase
+                    .from('orders')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
+                    .limit(1)
+
+                if (orders && orders.length > 0) {
+                    // Mark session as converted
+                    await supabase
+                        .from('chatbot_sessions')
+                        .update({ converted: true })
+                        .eq('id', currentSessionId)
+                }
             }
         }
 
@@ -46,7 +90,7 @@ export async function POST(req: Request) {
             `- ${p.name} (₹${p.price}): ${p.attributes?.benefits || p.description}`
         ).join('\n')
 
-        const systemPrompt = `You are the "Hush Gentle Assistant", a helpful and calming customer service AI for an organic skincare brand.
+        const systemPrompt = `You are the "Hush Gentle Assistant", a helpful and calming customer service AI for a natural skincare brand.
 Your tone is soothing, polite, and minimal.
 
 Here is our product catalog:

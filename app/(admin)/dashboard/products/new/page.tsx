@@ -2,6 +2,7 @@ import { createProduct } from '@/lib/actions/products'
 import { createClient } from '@/lib/supabase-server'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import ProductSKUForm from '@/components/admin/ProductSKUForm'
 import { redirect } from 'next/navigation'
 
 async function getCategoriesList() {
@@ -110,15 +111,19 @@ export default async function NewProductPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Image URLs</label>
-                            <input
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Image URLs *</label>
+                            <textarea
                                 name="images"
-                                type="text"
+                                rows={3}
                                 className="w-full p-3 rounded-lg border border-gray-300 focus:ring-sage-500 focus:border-sage-500"
-                                placeholder="Comma-separated URLs: /images/product1.jpg, /images/product2.jpg"
+                                placeholder="One URL per line or comma-separated:&#10;/images/product1.jpg&#10;/images/product2.jpg&#10;/images/product3.jpg"
+                                required
                             />
-                            <p className="text-xs text-gray-500 mt-1">Separate multiple image URLs with commas</p>
+                            <p className="text-xs text-gray-500 mt-1">Enter multiple image URLs (one per line or comma-separated). At least one image required.</p>
                         </div>
+
+                        {/* Size Variations */}
+                        <ProductSKUForm />
 
                         <div className="space-y-4">
                             <div>

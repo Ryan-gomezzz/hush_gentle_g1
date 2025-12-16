@@ -1,7 +1,13 @@
 import { getDailySales, getSalesTrend, getChatbotConversion } from '@/lib/actions/analytics'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import DailySalesChart from '@/components/analytics/DailySalesChart'
+import dynamic from 'next/dynamic'
 import { TrendingUp, TrendingDown, MessageCircle, Users } from 'lucide-react'
+
+// Dynamic import for chart component to reduce initial bundle size
+const DailySalesChart = dynamic(() => import('@/components/analytics/DailySalesChart'), {
+    ssr: false, // Charts are client-side only
+    loading: () => <div className="h-64 flex items-center justify-center text-gray-400">Loading chart...</div>,
+})
 
 export default async function AnalyticsPage() {
     const dailySales = await getDailySales()

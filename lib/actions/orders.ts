@@ -71,18 +71,37 @@ export async function createOrder(formData: FormData) {
 
     const paymentMethod = (formData.get('paymentMethod') as string) || 'cod'
 
-    const shippingDetails = {
-        fullName: formData.get('fullName') as string,
-        address: formData.get('address') as string,
-        city: formData.get('city') as string,
-        zip: formData.get('zip') as string,
-        email: formData.get('email') as string,
-        payment_method: paymentMethod,
+    // Validate and sanitize shipping details
+    const fullName = (formData.get('fullName') as string)?.trim() || ''
+    const address = (formData.get('address') as string)?.trim() || ''
+    const city = (formData.get('city') as string)?.trim() || ''
+    const zip = (formData.get('zip') as string)?.trim() || ''
+    const email = (formData.get('email') as string)?.trim().toLowerCase() || ''
+
+    // Validate required fields
+    if (!fullName || !address || !email || !city || !zip) {
+        throw new Error('Please fill in all required shipping details')
     }
 
-    // Validate shipping details
-    if (!shippingDetails.fullName || !shippingDetails.address || !shippingDetails.email) {
-        throw new Error('Please fill in all required shipping details')
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+        throw new Error('Please provide a valid email address')
+    }
+
+    // Validate payment method
+    const validPaymentMethods = ['cod', 'stripe', 'razorpay']
+    if (!validPaymentMethods.includes(paymentMethod)) {
+        throw new Error('Invalid payment method')
+    }
+
+    const shippingDetails = {
+        fullName: fullName.slice(0, 200), // Limit length
+        address: address.slice(0, 500),
+        city: city.slice(0, 100),
+        zip: zip.slice(0, 20),
+        email: email.slice(0, 255),
+        payment_method: paymentMethod,
     }
 
     // 2. Create Order with generated order ID
@@ -147,14 +166,24 @@ export async function createOrder(formData: FormData) {
             .eq('id', item.product_id)
     }
 
-    // 5. Track analytics
+    // 5. Mark chatbot sessions as converted (if user had any active sessions)
+    if (user?.id) {
+        await supabase
+            .from('chatbot_sessions')
+            .update({ converted: true })
+            .eq('user_id', user.id)
+            .eq('converted', false)
+            .gte('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()) // Last 48 hours
+    }
+
+    // 6. Track analytics
     await trackEvent(user?.id, 'checkout_completed', {
         order_id: order.id,
         total_amount: totalAmount,
         item_count: validatedItems.length,
     })
 
-    // 6. Send emails (non-blocking)
+    // 7. Send emails (non-blocking)
     const { sendOrderConfirmation, sendOrderAlert } = await import('@/lib/actions/emails')
     Promise.all([
         sendOrderConfirmation(order.id),
@@ -164,11 +193,11 @@ export async function createOrder(formData: FormData) {
         // Don't fail the order if email fails
     })
 
-    // 7. Clear Cart
+    // 8. Clear Cart
     await supabase.from('carts').delete().eq('id', cart.id)
     cookies().delete('cartId')
 
-    // 7. Redirect to success
+    // 9. Redirect to success
     redirect(`/checkout/success?orderId=${order.id}`)
 }
 

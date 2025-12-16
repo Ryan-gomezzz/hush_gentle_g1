@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { memo } from 'react'
 import { Product } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { addToCart } from '@/lib/actions/cart'
 // import AddToCartButton from './AddToCartButton' // Client component
 
-export default function ProductCard({ product }: { product: Product }) {
+function ProductCard({ product }: { product: Product }) {
     const imageUrl = product.images?.[0] || '/placeholder.jpg'
 
     return (
@@ -55,3 +56,6 @@ export default function ProductCard({ product }: { product: Product }) {
         </Card>
     )
 }
+
+// Memoize to prevent unnecessary re-renders
+export default memo(ProductCard)

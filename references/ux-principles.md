@@ -1,7 +1,7 @@
 # UX & Design Principles - Hush Gentle
 
 ## Brand Identity
-- **Keywords**: Organic, Gentle, Honest, Calm, Premium.
+- **Keywords**: Natural, Gentle, Honest, Calm, Premium.
 - **Aesthetic**: Minimalist, "Clean Girl" aesthetic, High-end Spa.
 - **Core Experience**: Not transactional; relational. We want the user to feel soothed, not pressured.
 

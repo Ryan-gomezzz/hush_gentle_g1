@@ -38,12 +38,12 @@ export async function getProducts(categorySlug?: string): Promise<Product[]> {
     return data as Product[]
 }
 
-export async function getProductBySlug(slug: string): Promise<Product | null> {
+export async function getProductBySlug(slug: string): Promise<Product & { skus?: any[] } | null> {
     const supabase = createClient()
 
     const { data, error } = await supabase
         .from('products')
-        .select('*, category:categories(slug, name)')
+        .select('*, category:categories(slug, name), skus:product_skus(*)')
         .eq('slug', slug)
         .single()
 
@@ -52,7 +52,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
         return null
     }
 
-    return data as Product
+    return data as Product & { skus?: any[] }
 }
 
 export async function getFeaturedProducts(): Promise<Product[]> {
@@ -114,14 +114,43 @@ export async function createProduct(formData: FormData) {
 
     const supabase = createClient()
 
-    const name = formData.get('name') as string
-    const slug = formData.get('slug') as string
-    const description = formData.get('description') as string
-    const price = parseFloat(formData.get('price') as string)
-    const stock = parseInt(formData.get('stock') as string)
-    const categoryId = formData.get('category_id') as string
+    // Validate and sanitize inputs
+    const name = (formData.get('name') as string)?.trim() || ''
+    const slug = (formData.get('slug') as string)?.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-') || ''
+    const description = (formData.get('description') as string)?.trim() || ''
+    const priceStr = formData.get('price') as string
+    const stockStr = formData.get('stock') as string
+    const categoryId = (formData.get('category_id') as string)?.trim() || ''
     const isFeatured = formData.get('is_featured') === 'true'
-    const images = (formData.get('images') as string)?.split(',').filter(Boolean) || []
+
+    // Validate required fields
+    if (!name || !slug || !description) {
+        throw new Error('Name, slug, and description are required')
+    }
+
+    // Validate price and stock
+    const price = parseFloat(priceStr)
+    const stock = parseInt(stockStr)
+
+    if (isNaN(price) || price < 0) {
+        throw new Error('Invalid price')
+    }
+
+    if (isNaN(stock) || stock < 0) {
+        throw new Error('Invalid stock quantity')
+    }
+
+    // Validate slug format
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+        throw new Error('Slug must contain only lowercase letters, numbers, and hyphens')
+    }
+    
+    // Parse images - support both comma-separated and newline-separated
+    const imagesInput = formData.get('images') as string || ''
+    const images = imagesInput
+        .split(/[,\n]/)
+        .map(img => img.trim())
+        .filter(Boolean)
     
     // Parse attributes
     const ingredients = (formData.get('ingredients') as string)?.split(',').filter(Boolean) || []
@@ -134,7 +163,7 @@ export async function createProduct(formData: FormData) {
         usage,
     }
 
-    const { data, error } = await supabase
+    const { data: product, error } = await supabase
         .from('products')
         .insert({
             name,
@@ -156,7 +185,40 @@ export async function createProduct(formData: FormData) {
         throw new Error('Failed to create product')
     }
 
-    return data
+    // Create SKUs if provided
+    const skuCount = parseInt(formData.get('sku_count') as string) || 0
+    if (skuCount > 0 && product) {
+        const skus = []
+        for (let i = 0; i < skuCount; i++) {
+            const size = formData.get(`sku_size_${i}`) as string
+            const priceStr = formData.get(`sku_price_${i}`) as string
+            const stockStr = formData.get(`sku_stock_${i}`) as string
+            const skuCode = formData.get(`sku_code_${i}`) as string
+
+            if (size && stockStr) {
+                skus.push({
+                    product_id: product.id,
+                    size,
+                    price: priceStr ? parseFloat(priceStr) : null,
+                    stock: parseInt(stockStr),
+                    sku_code: skuCode || null,
+                })
+            }
+        }
+
+        if (skus.length > 0) {
+            const { error: skuError } = await supabase
+                .from('product_skus')
+                .insert(skus)
+
+            if (skuError) {
+                console.error('Error creating SKUs:', skuError)
+                // Don't throw - product is created, SKUs can be added later
+            }
+        }
+    }
+
+    return product
 }
 
 export async function updateProduct(id: string, formData: FormData) {

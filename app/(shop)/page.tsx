@@ -7,12 +7,14 @@ export default async function Home() {
     const featuredProducts = await getFeaturedProducts();
 
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen relative">
             {/* Hero Section */}
-            <HeroCarousel />
+            <div className="relative">
+                <HeroCarousel />
+            </div>
 
             {/* Featured Products */}
-            <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto w-full">
+            <section className="py-8 md:py-12 px-6 md:px-12 max-w-7xl mx-auto w-full">
                 <div className="flex justify-between items-end mb-12">
                     <div>
                         <h2 className="text-4xl font-serif text-sage-900 mb-2">Our Favorites</h2>
@@ -39,8 +41,8 @@ export default async function Home() {
                 <h2 className="text-3xl md:text-4xl font-serif text-sage-800 mb-12">Why Hush Gentle?</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                     <div className="p-8 bg-beige-50 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                        <h3 className="text-2xl font-serif text-sage-700 mb-3">100% Organic</h3>
-                        <p className="text-gray-600 leading-relaxed">Certified organic ingredients sourced directly from nature. No fillers, just pure goodness.</p>
+                        <h3 className="text-2xl font-serif text-sage-700 mb-3">Natural Ingredients</h3>
+                        <p className="text-gray-600 leading-relaxed">Carefully sourced natural ingredients from trusted suppliers. No fillers, just pure goodness.</p>
                     </div>
                     <div className="p-8 bg-beige-50 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                         <h3 className="text-2xl font-serif text-sage-700 mb-3">Cruelty Free</h3>

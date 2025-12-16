@@ -1,11 +1,11 @@
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getProductBySlug } from '@/lib/actions/products';
-import { addToCart } from '@/lib/actions/cart';
-import { Button } from '@/components/ui/button';
-import { Star, Check } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { trackEvent } from '@/lib/analytics';
 import { createClient } from '@/lib/supabase-server';
+import { trackProductView } from '@/lib/actions/user';
+import ProductImageGallery from '@/components/shop/ProductImageGallery';
+import ProductPurchaseForm from '@/components/shop/ProductPurchaseForm';
 
 export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
     const product = await getProductBySlug(params.slug);
@@ -22,44 +22,30 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
         product_name: product.name,
         product_slug: params.slug,
     });
+    
+    // Track for recently viewed
+    await trackProductView(user?.id, product.id);
 
-    const imageUrl = product.images?.[0] || '/placeholder.jpg';
+    const productImages = product.images && product.images.length > 0 ? product.images : ['/placeholder.jpg']
+    const skus = (product as any).skus || []
 
     return (
         <div className="container mx-auto px-6 py-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
-
                 {/* Gallery */}
-                <div className="relative aspect-square w-full bg-beige-50 rounded-3xl overflow-hidden shadow-sm flex items-center justify-center p-8">
-                    <Image
-                        src={imageUrl}
-                        alt={product.name}
-                        fill
-                        className="object-contain p-4"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        priority
-                    />
-                </div>
+                <ProductImageGallery images={productImages} productName={product.name} />
 
                 {/* Info */}
                 <div className="flex flex-col justify-center">
                     <div className="mb-2 flex items-center gap-2">
                         <span className="px-3 py-1 bg-beige-200 text-sage-800 text-xs font-bold uppercase tracking-wider rounded-full">
-                            {product.category_id ? 'Organic Care' : 'Collection'}
+                            {product.category_id ? 'Natural Care' : 'Collection'}
                         </span>
-                        {product.stock > 0 ? (
-                            <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                                <Check className="w-3 h-3" /> In Stock
-                            </span>
-                        ) : (
-                            <span className="text-xs text-red-500 font-medium">Out of Stock</span>
-                        )}
                     </div>
 
                     <h1 className="text-4xl md:text-5xl font-serif text-sage-900 mb-4 leading-tight">{product.name}</h1>
 
                     <div className="flex items-center gap-4 mb-6">
-                        <p className="text-3xl font-bold text-sage-800">₹{product.price.toFixed(2)}</p>
                         <div className="flex items-center text-yellow-500 text-sm">
                             <Star className="w-4 h-4 fill-current" />
                             <Star className="w-4 h-4 fill-current" />
@@ -86,21 +72,17 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
                         </ul>
                     </div>
 
-                    <form action={async () => {
-                        'use server';
-                        await addToCart(product.id, 1);
-                    }} className="mb-4">
-                        <Button
-                            size="lg"
-                            className="w-full md:w-auto min-w-[200px] text-lg py-6"
-                            disabled={product.stock <= 0}
-                        >
-                            {product.stock > 0 ? 'Add to Cart' : 'Sold Out'}
-                        </Button>
-                    </form>
+                    <ProductPurchaseForm
+                        productId={product.id}
+                        basePrice={product.price}
+                        baseStock={product.stock}
+                        skus={skus}
+                        images={productImages}
+                        productName={product.name}
+                    />
 
                     <p className="text-xs text-sage-500 text-center md:text-left">
-                        Free shipping on orders over $50. 30-day gentle return policy.
+                        Free shipping on orders over ₹499. 30-day gentle return policy.
                     </p>
                 </div>
             </div>

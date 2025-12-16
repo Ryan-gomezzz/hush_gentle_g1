@@ -25,8 +25,8 @@ export async function login(prevState: AuthState, formData: FormData, redirectTo
 
     revalidatePath('/', 'layout')
     
-    // Redirect to the specified URL or home
-    const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/'
+    // Redirect to dashboard for logged-in users, or specified URL
+    const safeRedirect = redirectTo.startsWith('/') && redirectTo !== '/' ? redirectTo : '/account/dashboard'
     redirect(safeRedirect)
 }
 
@@ -84,8 +84,9 @@ export async function signup(prevState: AuthState, formData: FormData, redirectT
 
     revalidatePath('/', 'layout')
     
-    // Return success state with redirect URL - client will handle redirect
-    return { message: `SUCCESS_REDIRECT:${redirectTo}` }
+    // Return success state with redirect URL - redirect to dashboard for new users
+    const safeRedirect = redirectTo.startsWith('/') && redirectTo !== '/' ? redirectTo : '/account/dashboard'
+    return { message: `SUCCESS_REDIRECT:${safeRedirect}` }
 }
 
 export async function signout() {

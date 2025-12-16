@@ -6,10 +6,11 @@ import { cn } from "@/utils/cn";
 export default async function ProductsPage({
     searchParams,
 }: {
-    searchParams: { category?: string; search?: string };
+    searchParams: Promise<{ category?: string; search?: string }>;
 }) {
-    const category = searchParams.category;
-    const searchQuery = searchParams.search;
+    const params = await searchParams
+    const category = params.category;
+    const searchQuery = params.search;
     let products = await getProducts(category);
     
     // Filter products by search query if provided

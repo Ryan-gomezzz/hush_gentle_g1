@@ -1,7 +1,9 @@
 import { getAllOrders, getOrderStats } from '@/lib/actions/admin'
-import { Eye } from 'lucide-react'
+import { Eye, Download } from 'lucide-react'
 import Link from 'next/link'
 import OrderStatusDropdown from '@/components/admin/OrderStatusDropdown'
+import DateRangeFilter from '@/components/admin/DateRangeFilter'
+import OrderStatistics from '@/components/admin/OrderStatistics'
 
 function formatOrderId(orderId: string, createdAt: string): string {
     const date = new Date(createdAt)
@@ -9,9 +11,14 @@ function formatOrderId(orderId: string, createdAt: string): string {
     return `HG-${dateStr}-${orderId.slice(0, 4).toUpperCase()}`
 }
 
-export default async function AdminOrdersPage() {
-    const orders = await getAllOrders()
-    const stats = await getOrderStats()
+export default async function AdminOrdersPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ startDate?: string; endDate?: string }>
+}) {
+    const params = await searchParams
+    const orders = await getAllOrders(params.startDate, params.endDate)
+    const stats = await getOrderStats(params.startDate, params.endDate)
 
     const statusColors: Record<string, string> = {
         confirmed: 'bg-green-100 text-green-800',
@@ -24,10 +31,26 @@ export default async function AdminOrdersPage() {
 
     return (
         <div>
-            <div className="mb-6">
-                <h1 className="text-3xl font-serif text-gray-800">Orders</h1>
-                <p className="text-gray-600 mt-1">Manage customer orders</p>
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h1 className="text-3xl font-serif text-gray-800">Orders</h1>
+                    <p className="text-gray-600 mt-1">Manage customer orders</p>
+                </div>
+                <a
+                    href={`/api/admin/orders/export?${new URLSearchParams({
+                        startDate: params.startDate || '',
+                        endDate: params.endDate || '',
+                    }).toString()}`}
+                    className="flex items-center gap-2 px-4 py-2 bg-sage-600 text-white rounded-lg hover:bg-sage-700 transition-colors"
+                >
+                    <Download className="w-4 h-4" />
+                    Export CSV
+                </a>
             </div>
+
+            <DateRangeFilter />
+
+            <OrderStatistics stats={stats} startDate={params.startDate} endDate={params.endDate} />
 
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -71,7 +94,7 @@ export default async function AdminOrdersPage() {
                             </tr>
                         ) : (
                             orders.map((order: any) => {
-                            const orderNumber = formatOrderId(order.id, order.created_at)
+                            const orderNumber = order.order_number || formatOrderId(order.id, order.created_at)
                             const shippingDetails = order.shipping_details as any
                             const customerName = shippingDetails?.fullName || order.user?.full_name || 'Guest'
                             const customerEmail = shippingDetails?.email || order.user?.email || ''

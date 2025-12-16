@@ -2,11 +2,12 @@ import Link from 'next/link'
 import { CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export default function CheckoutSuccessPage({
+export default async function CheckoutSuccessPage({
     searchParams,
 }: {
-    searchParams: { orderId: string };
+    searchParams: Promise<{ orderId?: string }>;
 }) {
+    const params = await searchParams
     return (
         <div className="container mx-auto px-6 py-20 text-center">
             <div className="flex justify-center mb-6">
@@ -14,7 +15,7 @@ export default function CheckoutSuccessPage({
             </div>
             <h1 className="text-4xl font-serif text-sage-900 mb-4">Order Confirmed!</h1>
             <p className="text-lg text-sage-600 mb-8">
-                Thank you for choosing Hush Gentle. Your order <span className="font-mono bg-sage-50 px-2 py-1 rounded text-sage-800">#{searchParams.orderId.slice(0, 8)}</span> has been placed.
+                Thank you for choosing Hush Gentle. Your order <span className="font-mono bg-sage-50 px-2 py-1 rounded text-sage-800">#{params.orderId ? params.orderId.slice(0, 8) : 'N/A'}</span> has been placed.
             </p>
             <Link href="/products">
                 <Button variant="outline">Continue Shopping</Button>

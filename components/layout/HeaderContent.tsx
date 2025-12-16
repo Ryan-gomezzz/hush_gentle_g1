@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { ShoppingBag, User, Heart } from 'lucide-react'
+import { ShoppingBag, User, Heart, Package } from 'lucide-react'
 import SearchBar from './SearchBar'
 import { useHeaderContext } from './HeaderWrapper'
 
@@ -43,6 +43,17 @@ export default function HeaderContent({ user, itemCount }: { user: any, itemCoun
 
             {/* Right: Icons Group */}
             <div className="flex items-center gap-3 md:gap-4 lg:gap-6">
+                {/* Orders Icon (only when logged in) */}
+                {user && (
+                    <Link 
+                        href="/orders" 
+                        className={`transition-colors relative ${textColorClass}`}
+                        aria-label="My Orders"
+                    >
+                        <Package className="w-5 h-5" />
+                    </Link>
+                )}
+
                 {/* Wishlist Icon */}
                 <Link 
                     href="/wishlist" 

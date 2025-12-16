@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getCart } from '@/lib/actions/cart'
 import { trackEvent } from '@/lib/analytics'
+import { validateCoupon } from '@/lib/actions/coupons'
 
 /**
  * Generate order ID in format: HG-YYYYMMDD-####
@@ -69,6 +70,26 @@ export async function createOrder(formData: FormData) {
         throw new Error('Invalid order total')
     }
 
+    // Handle coupon code if provided
+    const couponCode = (formData.get('coupon_code') as string)?.trim().toUpperCase()
+    let discountAmount = 0
+    let couponId: string | null = null
+
+    if (couponCode) {
+        const couponResult = await validateCoupon(couponCode, user.id, totalAmount)
+        if (couponResult.isValid && couponResult.coupon) {
+            discountAmount = couponResult.discountAmount
+            couponId = couponResult.coupon.id
+        } else {
+            throw new Error(couponResult.errorMessage || 'Invalid coupon code')
+        }
+    }
+
+    const finalAmount = totalAmount - discountAmount
+    if (finalAmount < 0) {
+        throw new Error('Order total cannot be negative')
+    }
+
     const paymentMethod = (formData.get('paymentMethod') as string) || 'cod'
 
     // Validate and sanitize shipping details
@@ -104,13 +125,35 @@ export async function createOrder(formData: FormData) {
         payment_method: paymentMethod,
     }
 
+    // Calculate estimated delivery date based on pincode
+    let estimatedDeliveryDate: Date | null = null
+    if (zip) {
+        try {
+            const { data: deliveryDays, error: deliveryError } = await supabase.rpc('get_estimated_delivery_days', {
+                pincode_input: zip,
+            })
+            if (!deliveryError && deliveryDays && typeof deliveryDays === 'number' && deliveryDays > 0) {
+                const deliveryDate = new Date()
+                deliveryDate.setDate(deliveryDate.getDate() + deliveryDays)
+                estimatedDeliveryDate = deliveryDate
+            }
+        } catch (error) {
+            // If delivery estimation fails, continue without it
+            console.error('Error calculating delivery date:', error)
+        }
+    }
+
     // 2. Create Order with generated order ID
     const orderNumber = generateOrderId()
     const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
             user_id: user.id,
-            total_amount: totalAmount,
+            total_amount: finalAmount,
+            discount_amount: discountAmount,
+            coupon_id: couponId,
+            pincode: zip,
+            estimated_delivery_date: estimatedDeliveryDate?.toISOString() || null,
             status: 'pending',
             shipping_details: shippingDetails,
             payment_intent_id: orderNumber, // Store order number here temporarily
@@ -145,14 +188,26 @@ export async function createOrder(formData: FormData) {
         throw new Error('Failed to create order items')
     }
 
-    // 3.5 Create a payment record for COD (manual payment)
+    // 3.5 Record coupon usage if coupon was applied
+    if (couponId && discountAmount > 0) {
+        await supabase
+            .from('coupon_usages')
+            .insert({
+                coupon_id: couponId,
+                user_id: user.id,
+                order_id: order.id,
+                discount_amount: discountAmount,
+            })
+    }
+
+    // 3.6 Create a payment record for COD (manual payment)
     await supabase
         .from('payments')
         .insert({
             order_id: order.id,
             provider: 'manual',
             status: 'pending',
-            amount: totalAmount,
+            amount: finalAmount,
             transaction_id: null,
             metadata: { method: paymentMethod },
         })
@@ -179,8 +234,10 @@ export async function createOrder(formData: FormData) {
     // 6. Track analytics
     await trackEvent(user?.id, 'checkout_completed', {
         order_id: order.id,
-        total_amount: totalAmount,
+        total_amount: finalAmount,
+        discount_amount: discountAmount,
         item_count: validatedItems.length,
+        coupon_code: couponCode || null,
     })
 
     // 7. Send emails (non-blocking)
@@ -219,6 +276,10 @@ export async function getUserOrders() {
             id,
             status,
             total_amount,
+            discount_amount,
+            order_number,
+            estimated_delivery_date,
+            tracking_number,
             created_at,
             shipping_details,
             items:order_items(

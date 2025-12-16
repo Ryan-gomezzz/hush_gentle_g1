@@ -97,12 +97,20 @@ export async function getDashboardKPIs() {
         ? conversionRate - prevConversionRate
         : 0
 
+    const orderCount = recentOrders?.length || 0
+    const prevOrderCount = previousOrders?.length || 0
+    const orderChange = prevOrderCount > 0
+        ? ((orderCount - prevOrderCount) / prevOrderCount) * 100
+        : 0
+
     return {
         totalRevenue,
         revenueChange,
         conversionRate,
         conversionChange,
         activeCarts: allCarts?.length || 0,
+        orderCount,
+        orderChange,
     }
 }
 

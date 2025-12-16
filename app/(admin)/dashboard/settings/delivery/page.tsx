@@ -68,7 +68,7 @@ export default async function DeliverySettingsPage() {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
                                             <DeliveryMappingForm
-                                                action={async (formData) => {
+                                                action={async (formData: FormData) => {
                                                     'use server'
                                                     await updateDeliveryMapping(mapping.id, formData)
                                                 }}

@@ -128,13 +128,18 @@ export async function createOrder(formData: FormData) {
     // Calculate estimated delivery date based on pincode
     let estimatedDeliveryDate: Date | null = null
     if (zip) {
-        const { data: deliveryDays } = await supabase.rpc('get_estimated_delivery_days', {
-            pincode_input: zip,
-        })
-        if (deliveryDays && typeof deliveryDays === 'number') {
-            const deliveryDate = new Date()
-            deliveryDate.setDate(deliveryDate.getDate() + deliveryDays)
-            estimatedDeliveryDate = deliveryDate
+        try {
+            const { data: deliveryDays, error: deliveryError } = await supabase.rpc('get_estimated_delivery_days', {
+                pincode_input: zip,
+            })
+            if (!deliveryError && deliveryDays && typeof deliveryDays === 'number' && deliveryDays > 0) {
+                const deliveryDate = new Date()
+                deliveryDate.setDate(deliveryDate.getDate() + deliveryDays)
+                estimatedDeliveryDate = deliveryDate
+            }
+        } catch (error) {
+            // If delivery estimation fails, continue without it
+            console.error('Error calculating delivery date:', error)
         }
     }
 

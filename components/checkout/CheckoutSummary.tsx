@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getCart } from '@/lib/actions/cart'
 import CouponCodeInput from './CouponCodeInput'
 
 interface CheckoutSummaryProps {
@@ -9,12 +8,12 @@ interface CheckoutSummaryProps {
 }
 
 export default function CheckoutSummary({ initialSubtotal }: CheckoutSummaryProps) {
-    const [subtotal, setSubtotal] = useState(initialSubtotal)
+    const [subtotal] = useState(initialSubtotal)
     const [discount, setDiscount] = useState(0)
     const [total, setTotal] = useState(initialSubtotal)
 
     useEffect(() => {
-        setTotal(subtotal - discount)
+        setTotal(Math.max(0, subtotal - discount))
     }, [subtotal, discount])
 
     const handleCouponApplied = (code: string, discountAmount: number) => {

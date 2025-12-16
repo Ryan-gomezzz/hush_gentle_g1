@@ -89,7 +89,7 @@ export async function validateCoupon(
         order_amount: orderAmount,
     })
 
-    if (error || !data || data.length === 0) {
+    if (error || !data || !Array.isArray(data) || data.length === 0) {
         return {
             isValid: false,
             coupon: null,
@@ -98,7 +98,7 @@ export async function validateCoupon(
         }
     }
 
-    const result = data[0]
+    const result = data[0] as any
 
     if (!result.is_valid) {
         return {

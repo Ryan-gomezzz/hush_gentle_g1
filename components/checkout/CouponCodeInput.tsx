@@ -27,8 +27,8 @@ export default function CouponCodeInput({ orderTotal, onCouponApplied, onCouponR
         startTransition(async () => {
             try {
                 // Get user ID if available (for per-user validation)
-                const userId = null // Will be validated server-side during order creation
-                const result = await validateCoupon(code.trim(), userId, orderTotal)
+                // Note: userId will be validated server-side during order creation
+                const result = await validateCoupon(code.trim(), null, orderTotal)
 
                 if (result.isValid && result.coupon) {
                     setAppliedCoupon({

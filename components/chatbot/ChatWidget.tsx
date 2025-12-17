@@ -38,8 +38,17 @@ export default function ChatWidget() {
             const res = await fetch('/api/chatbot', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: userMsg, sessionId })
+                body: JSON.stringify({ 
+                    message: userMsg, 
+                    sessionId: sessionId || undefined 
+                })
             })
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ reply: 'An error occurred' }))
+                throw new Error(errorData.reply || `Server error: ${res.status}`)
+            }
+
             const data = await res.json()
 
             // Update session ID if returned
@@ -47,9 +56,13 @@ export default function ChatWidget() {
                 setSessionId(data.sessionId)
             }
 
-            setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
-        } catch {
-            setMessages(prev => [...prev, { role: 'assistant', content: 'I apologize, I am having trouble connecting right now.' }])
+            setMessages(prev => [...prev, { role: 'assistant', content: data.reply || 'I apologize, I am having trouble connecting right now.' }])
+        } catch (error: any) {
+            console.error('Chatbot error:', error)
+            setMessages(prev => [...prev, { 
+                role: 'assistant', 
+                content: error.message || 'I apologize, I am having trouble connecting right now. Please try again.' 
+            }])
         } finally {
             setLoading(false)
         }

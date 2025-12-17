@@ -16,7 +16,7 @@ export const analyticsEventSchema = z.object({
 
 export const chatbotMessageSchema = z.object({
     message: z.string().min(1).max(2000).trim(),
-    sessionId: z.string().uuid().optional(),
+    sessionId: z.union([z.string().uuid(), z.null(), z.undefined()]).optional(),
 })
 
 export const addressSchema = z.object({

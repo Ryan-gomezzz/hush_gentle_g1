@@ -4,7 +4,14 @@ import { requireAdmin } from '@/lib/utils/admin-check'
 
 export async function GET(request: NextRequest) {
     try {
-        await requireAdmin()
+        // Check admin authentication first
+        try {
+            await requireAdmin()
+        } catch (authError: any) {
+            console.error('Admin authentication failed:', authError)
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const supabase = createClient()
 
         const searchParams = request.nextUrl.searchParams
@@ -35,7 +42,14 @@ export async function GET(request: NextRequest) {
 
         if (error) {
             console.error('Error fetching orders for export:', error)
-            return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
+            return NextResponse.json({ 
+                error: 'Failed to fetch orders', 
+                details: error.message 
+            }, { status: 500 })
+        }
+
+        if (!orders) {
+            return NextResponse.json({ error: 'No orders found' }, { status: 404 })
         }
 
         // Convert to CSV

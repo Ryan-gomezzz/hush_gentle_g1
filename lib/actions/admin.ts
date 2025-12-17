@@ -164,6 +164,7 @@ export async function getTopProducts(limit: number = 5) {
         .select(`
             product_id,
             quantity,
+            price_at_purchase,
             product:products(id, name, images)
         `)
 
@@ -173,26 +174,38 @@ export async function getTopProducts(limit: number = 5) {
     }
 
     // Aggregate by product
-    const productMap = new Map<string, { id: string; name: string; images: string[]; totalSold: number }>()
+    const productMap = new Map<string, { id: string; name: string; images: string[]; sales: number; revenue: number }>()
     
     orderItems.forEach((item: any) => {
         const productId = item.product_id
+        const quantity = Number(item.quantity) || 0
+        const priceAtPurchase = Number(item.price_at_purchase) || 0
+        const itemRevenue = quantity * priceAtPurchase
+
         if (!productMap.has(productId)) {
             productMap.set(productId, {
                 id: item.product?.id || productId,
                 name: item.product?.name || 'Unknown Product',
                 images: item.product?.images || [],
-                totalSold: 0,
+                sales: 0,
+                revenue: 0,
             })
         }
         const product = productMap.get(productId)!
-        product.totalSold += item.quantity
+        product.sales += quantity
+        product.revenue += itemRevenue
     })
 
-    // Sort by total sold and return top N
+    // Sort by revenue and return top N with rank
     return Array.from(productMap.values())
-        .sort((a, b) => b.totalSold - a.totalSold)
+        .sort((a, b) => b.revenue - a.revenue)
         .slice(0, limit)
+        .map((product, index) => ({
+            rank: index + 1,
+            name: product.name,
+            sales: product.sales,
+            revenue: product.revenue,
+        }))
 }
 
 export async function getOrderStats(startDate?: string, endDate?: string) {

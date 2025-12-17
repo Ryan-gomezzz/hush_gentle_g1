@@ -28,10 +28,21 @@ export async function POST(req: Request) {
         }
 
         // Validate input
-        const body = await req.json()
+        let body
+        try {
+            body = await req.json()
+        } catch (error) {
+            console.error('Invalid JSON in chatbot request:', error)
+            return NextResponse.json(
+                { reply: "I didn't quite understand that. Could you rephrase?", sessionId: null },
+                { status: 400 }
+            )
+        }
+
         const validationResult = chatbotMessageSchema.safeParse(body)
         
         if (!validationResult.success) {
+            console.error('Validation error:', validationResult.error)
             return NextResponse.json(
                 { reply: "I didn't quite understand that. Could you rephrase?", sessionId: null },
                 { status: 400 }
@@ -157,9 +168,15 @@ Rules:
         }
 
         return NextResponse.json({ reply, sessionId: currentSessionId })
-    } catch (error) {
+    } catch (error: any) {
         console.error('Chat API Error:', error)
-        const errorReply = "I'm having a brief moment of silence. Please try again."
-        return NextResponse.json({ reply: errorReply }, { status: 500 })
+        const errorReply = error.message?.includes('API Key') 
+            ? "I'm currently undergoing a meditation session. Please check back later!"
+            : "I'm having a brief moment of silence. Please try again."
+        return NextResponse.json({ 
+            reply: errorReply, 
+            sessionId: null,
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        }, { status: 500 })
     }
 }

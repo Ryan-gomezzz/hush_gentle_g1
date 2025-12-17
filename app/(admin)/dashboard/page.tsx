@@ -209,10 +209,10 @@ export default async function DashboardPage() {
                                     <div key={product.rank} className="flex items-center justify-between pb-4 border-b last:border-0">
                                         <div>
                                             <div className="font-medium text-gray-900">
-                                                {product.rank}. {product.name}
+                                                {product.rank}. {product.name || 'Unknown Product'}
                                             </div>
                                             <div className="text-sm text-gray-500">
-                                                {product.sales} sales • ₹{product.revenue.toLocaleString('en-IN')}
+                                                {product.sales || 0} sales • ₹{Number(product.revenue || 0).toLocaleString('en-IN')}
                                             </div>
                                         </div>
                                     </div>

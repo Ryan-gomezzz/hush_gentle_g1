@@ -2,6 +2,8 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { Product } from '@/types'
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 
 export async function getProducts(categorySlug?: string): Promise<Product[]> {
     const supabase = createClient()
@@ -338,4 +340,9 @@ export async function deleteProduct(id: string) {
         console.error('Error deleting product:', error)
         throw new Error('Failed to delete product')
     }
+
+    // Revalidate the products page and related pages
+    revalidatePath('/dashboard/products')
+    revalidatePath('/products')
+    revalidatePath('/', 'layout')
 }

@@ -1,9 +1,10 @@
 import { getAllOrders, getOrderStats } from '@/lib/actions/admin'
-import { Eye, Download } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import Link from 'next/link'
 import OrderStatusDropdown from '@/components/admin/OrderStatusDropdown'
 import DateRangeFilter from '@/components/admin/DateRangeFilter'
 import OrderStatistics from '@/components/admin/OrderStatistics'
+import ExportCSVButton from '@/components/admin/ExportCSVButton'
 
 function formatOrderId(orderId: string, createdAt: string): string {
     const date = new Date(createdAt)
@@ -36,16 +37,7 @@ export default async function AdminOrdersPage({
                     <h1 className="text-3xl font-serif text-gray-800">Orders</h1>
                     <p className="text-gray-600 mt-1">Manage customer orders</p>
                 </div>
-                <a
-                    href={`/api/admin/orders/export?${new URLSearchParams({
-                        startDate: params.startDate || '',
-                        endDate: params.endDate || '',
-                    }).toString()}`}
-                    className="flex items-center gap-2 px-4 py-2 bg-sage-600 text-white rounded-lg hover:bg-sage-700 transition-colors"
-                >
-                    <Download className="w-4 h-4" />
-                    Export CSV
-                </a>
+                <ExportCSVButton startDate={params.startDate} endDate={params.endDate} />
             </div>
 
             <DateRangeFilter />

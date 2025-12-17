@@ -2,8 +2,9 @@ import { getProducts } from '@/lib/actions/products'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Eye, Pencil, Trash2 } from 'lucide-react'
+import { Eye, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase-server'
+import DeleteProductButton from '@/components/admin/DeleteProductButton'
 
 async function getCategoriesList() {
     const supabase = createClient()
@@ -78,15 +79,7 @@ export default async function AdminProductsPage() {
                                             <Link href={`/dashboard/products/${product.id}`} className="text-gray-400 hover:text-sage-600">
                                                 <Pencil className="w-4 h-4" />
                                             </Link>
-                                            <form action={async () => {
-                                                'use server'
-                                                const { deleteProduct } = await import('@/lib/actions/products')
-                                                await deleteProduct(product.id)
-                                            }}>
-                                                <button type="submit" className="text-gray-400 hover:text-red-600">
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </form>
+                                            <DeleteProductButton productId={product.id} productName={product.name} />
                                         </div>
                                     </td>
                                 </tr>

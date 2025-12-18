@@ -12,11 +12,11 @@ export default async function ProductsPage({
     const category = params.category;
     const searchQuery = params.search;
     let products = await getProducts(category);
-    
+
     // Filter products by search query if provided
     if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        products = products.filter(product => 
+        products = products.filter(product =>
             product.name.toLowerCase().includes(query) ||
             product.description?.toLowerCase().includes(query) ||
             product.attributes?.benefits?.toLowerCase().includes(query)
@@ -32,7 +32,7 @@ export default async function ProductsPage({
     ];
 
     return (
-        <div className="container mx-auto px-6 py-12">
+        <div className="container mx-auto px-4 md:px-6 py-8 md:py-12">
             <div className="flex flex-col md:flex-row justify-between items-center mb-12">
                 <h1 className="text-4xl font-serif text-sage-900 mb-4 md:mb-0">Shop Gentle</h1>
 
@@ -54,13 +54,13 @@ export default async function ProductsPage({
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-8">
                 {products.length > 0 ? (
                     products.map(product => (
                         <ProductCard key={product.id} product={product} />
                     ))
                 ) : (
-                    <div className="col-span-3 text-center py-20">
+                    <div className="col-span-full text-center py-20">
                         <h3 className="text-xl text-sage-700 font-serif mb-2">No products found</h3>
                         <p className="text-sage-500">Try selecting a different category.</p>
                     </div>

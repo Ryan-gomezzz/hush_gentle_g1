@@ -37,11 +37,11 @@ function LoginForm() {
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email')
   const [phoneStep, setPhoneStep] = useState<'send' | 'verify'>('send')
   const [phoneNumber, setPhoneNumber] = useState('')
-  
+
   const loginWithRedirect = async (prevState: AuthState, formData: FormData) => {
     return await login(prevState, formData, redirectTo)
   }
-  
+
   const [emailState, emailFormAction] = useFormState(loginWithRedirect, initialState)
 
   const handleSendOTP = async (prevState: { success: boolean; message: string }, formData: FormData) => {
@@ -81,11 +81,10 @@ function LoginForm() {
               setAuthMethod('email')
               setPhoneStep('send')
             }}
-            className={`flex-1 py-2 text-sm font-medium transition-colors ${
-              authMethod === 'email'
+            className={`flex-1 py-2 text-sm font-medium transition-colors ${authMethod === 'email'
                 ? 'text-sage-900 border-b-2 border-sage-600'
                 : 'text-sage-600 hover:text-sage-900'
-            }`}
+              }`}
           >
             Email
           </button>
@@ -95,11 +94,10 @@ function LoginForm() {
               setAuthMethod('phone')
               setPhoneStep('send')
             }}
-            className={`flex-1 py-2 text-sm font-medium transition-colors ${
-              authMethod === 'phone'
+            className={`flex-1 py-2 text-sm font-medium transition-colors ${authMethod === 'phone'
                 ? 'text-sage-900 border-b-2 border-sage-600'
                 : 'text-sage-600 hover:text-sage-900'
-            }`}
+              }`}
           >
             Phone
           </button>
@@ -205,7 +203,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-beige-50 px-4">
+    <div className="w-full py-12 px-4 flex justify-center">
       <Suspense fallback={<Card className="w-full max-w-md shadow-lg border-sage-100"><CardContent className="p-8"><div className="text-center">Loading...</div></CardContent></Card>}>
         <LoginForm />
       </Suspense>

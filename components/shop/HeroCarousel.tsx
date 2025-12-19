@@ -36,9 +36,8 @@ export default function HeroCarousel() {
     }, [currentIndex])
 
     return (
-        <div className={`relative w-full h-[60vh] max-h-[600px] bg-beige-50 overflow-hidden ${
-            isHomepage ? '-mt-[140px] pt-[140px]' : ''
-        }`}>
+        <div className={`relative w-full h-[50vh] md:h-[60vh] max-h-[600px] bg-beige-50 overflow-hidden ${isHomepage ? '-mt-[100px] md:-mt-[140px] pt-[100px] md:pt-[140px]' : ''
+            }`}>
             <Link href="/products" className="absolute inset-0 z-10 cursor-pointer" aria-label="View all products">
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -84,9 +83,8 @@ export default function HeroCarousel() {
                             e.stopPropagation()
                             setCurrentIndex(idx)
                         }}
-                        className={`w-2 h-2 rounded-full transition-all pointer-events-auto ${
-                            idx === currentIndex ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/80'
-                        }`}
+                        className={`w-2 h-2 rounded-full transition-all pointer-events-auto ${idx === currentIndex ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/80'
+                            }`}
                         aria-label={`Go to slide ${idx + 1}`}
                     />
                 ))}

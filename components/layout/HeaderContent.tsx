@@ -5,17 +5,18 @@ import Image from 'next/image'
 import { ShoppingBag, User, Heart, Package } from 'lucide-react'
 import SearchBar from './SearchBar'
 import { useHeaderContext } from './HeaderWrapper'
+import MobileNav from './MobileNav'
 
 export default function HeaderContent({ user, itemCount }: { user: any, itemCount: number }) {
     const { isHomepage } = useHeaderContext()
-    const textColorClass = isHomepage 
-        ? 'text-white hover:text-white/80' 
+    const textColorClass = isHomepage
+        ? 'text-white hover:text-white/80'
         : 'text-sage-700 hover:text-sage-900'
 
     return (
         <nav className="flex justify-between items-center max-w-7xl mx-auto gap-2 md:gap-4">
             {/* Left: Logo */}
-            <Link href="/" className="hover:opacity-80 transition-opacity flex-shrink-0">
+            <Link href="/" className="hover:opacity-80 transition-opacity flex-shrink-0 z-20">
                 <Image
                     src="/images/logo.png"
                     alt="Hush Gentle Logo"
@@ -26,27 +27,27 @@ export default function HeaderContent({ user, itemCount }: { user: any, itemCoun
                 />
             </Link>
 
-            {/* Center: Shop Link */}
+            {/* Center: Shop Link (Desktop) */}
             <div className="hidden lg:flex items-center">
-                <Link 
-                    href="/products" 
+                <Link
+                    href="/products"
                     className={`font-medium text-sm uppercase tracking-wider transition-colors ${textColorClass}`}
                 >
                     Shop
                 </Link>
             </div>
 
-            {/* Center: Search Bar */}
+            {/* Center: Search Bar (Desktop/Tablet) */}
             <div className="flex-1 max-w-xs md:max-w-md mx-2 md:mx-4 hidden sm:block">
                 <SearchBar />
             </div>
 
-            {/* Right: Icons Group */}
-            <div className="flex items-center gap-3 md:gap-4 lg:gap-6">
-                {/* Orders Icon (only when logged in) */}
+            {/* Right: Icons Group (Desktop) */}
+            <div className="hidden sm:flex items-center gap-3 md:gap-4 lg:gap-6">
+                {/* Orders Icon (maybe optional for mobile, kept for desktop) */}
                 {user && (
-                    <Link 
-                        href="/orders" 
+                    <Link
+                        href="/orders"
                         className={`transition-colors relative ${textColorClass}`}
                         aria-label="My Orders"
                     >
@@ -55,8 +56,8 @@ export default function HeaderContent({ user, itemCount }: { user: any, itemCoun
                 )}
 
                 {/* Wishlist Icon */}
-                <Link 
-                    href="/wishlist" 
+                <Link
+                    href="/wishlist"
                     className={`transition-colors relative ${textColorClass}`}
                     aria-label="Wishlist"
                 >
@@ -64,8 +65,8 @@ export default function HeaderContent({ user, itemCount }: { user: any, itemCoun
                 </Link>
 
                 {/* Cart Icon */}
-                <Link 
-                    href="/cart" 
+                <Link
+                    href="/cart"
                     className={`relative transition-colors ${textColorClass}`}
                     aria-label="Shopping Cart"
                 >
@@ -80,8 +81,8 @@ export default function HeaderContent({ user, itemCount }: { user: any, itemCoun
                 {/* User/Login Icon */}
                 {user ? (
                     <div className="relative group">
-                        <Link 
-                            href="/account/dashboard" 
+                        <Link
+                            href="/account/dashboard"
                             className={`transition-colors ${textColorClass}`}
                             aria-label="Account"
                         >
@@ -89,8 +90,8 @@ export default function HeaderContent({ user, itemCount }: { user: any, itemCoun
                         </Link>
                     </div>
                 ) : (
-                    <Link 
-                        href="/login" 
+                    <Link
+                        href="/login"
                         className={`transition-colors ${textColorClass}`}
                         aria-label="Login"
                     >
@@ -98,6 +99,9 @@ export default function HeaderContent({ user, itemCount }: { user: any, itemCoun
                     </Link>
                 )}
             </div>
+
+            {/* Mobile Navigation Trigger */}
+            <MobileNav user={user} itemCount={itemCount} />
         </nav>
     )
 }
